@@ -13,6 +13,8 @@ python setup.py install
 running
 =======
 
-cgml-logreg
-cgml-mlp
-cgml-ae
+Run with Logistic Regression Classifier:
+ cgml --model logreg
+
+Run with Multi-layer Perceptron Classifier:
+ cgml --model mlp

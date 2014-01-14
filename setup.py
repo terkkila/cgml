@@ -11,4 +11,4 @@ setup( name         = 'cgml',
        url          = 'http://github.com/terkkila/cgml/',
        packages     = ['cgml'],
        package_dir  = {'cgml': 'src/cgml'},
-       data_files   = [('bin', ['bin/cgml-logreg'])])
+       data_files   = [('bin', ['bin/cgml'])])
