@@ -1,7 +1,8 @@
 
 import theano
 import theano.tensor as T
-from data import shareData
+from data import makeShared
+from classifiers import LogRegClassifier, MultiLayerPerceptronClassifier
 
 def trainTestBench(x = None,
                    y = None,
@@ -12,16 +13,25 @@ def trainTestBench(x = None,
                    model = None,
                    cost = None,
                    optimizer = None,
-                   error = None,
                    verbose = False):
 
-    x_train_sh,y_train_sh = shareData( (x_train,y_train) )
-    x_test_sh,y_test_sh   = shareData( (x_test,y_test) )
+    x_train_sh = makeShared( x_train )
+    y_train_sh = makeShared( y_train )
+    
+    x_test_sh  = makeShared( x_test )
+    y_test_sh  = makeShared( y_test )
+    
+    if type(model) == LogRegClassifier or type(model) == MultiLayerPerceptronClassifier:
+        y_train_sh = T.cast(y_train_sh, 'int32')
+        y_test_sh  = T.cast(y_test_sh, 'int32')
+        predict = theano.function(inputs = [x], outputs = T.argmax(model.output, axis=1) )
+    else:
+        predict = theano.function(inputs = [x], outputs = model.output)
 
+    
     n_train = x_train.shape[0]
     n_test  = x_test.shape[0]
     
-    predict = theano.function(inputs = [x], outputs = model.y_pred)
     
     idx1,idx2 = T.iscalars('idx1','idx2')
     
@@ -32,7 +42,7 @@ def trainTestBench(x = None,
     
     
     test_model = theano.function(inputs  = [idx1,idx2],
-                                 outputs = error,
+                                 outputs = cost,
                                  givens  = {x:x_test_sh[idx1:idx2],y:y_test_sh[idx1:idx2]} )
     
     nEpochs = 50
@@ -41,7 +51,7 @@ def trainTestBench(x = None,
         print "\nBEFORE TRAINING"
         print "Prediction:  ", predict(x_train)
         print "Ground truth:", y_train
-        print "Error:       ", test_model(0,n_test)
+        print "Cost:       ", test_model(0,n_test)
     
     for epoch in range(nEpochs):
         for idx in range(n_train-5):
@@ -51,6 +61,6 @@ def trainTestBench(x = None,
         print "\nAFTER TRAINING"
         print "Prediction:  ", predict(x_train)
         print "Ground truth:", y_train
-        print "Error:       ", test_model(0,n_test)
+        print "Cost:       ", test_model(0,n_test)
         
 

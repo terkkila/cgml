@@ -25,11 +25,7 @@ class LogRegClassifier(object):
         self.params = self.layer.params
 
         # Output of the layer are the class probabilities 
-        self.y_prob = self.layer.output
-
-        # Prediction is the class label with maximum probability
-        self.y_pred = T.argmax(self.y_prob, axis = 1)
-
+        self.output = self.layer.output
 
 class MultiLayerPerceptronClassifier(object):
 
@@ -49,26 +45,4 @@ class MultiLayerPerceptronClassifier(object):
         
         self.params = self.layer1.params + self.layer2.params
 
-        self.y_prob = self.layer2.output
-
-        self.y_pred = T.argmax(self.y_prob, axis = 1)
-        
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+        self.output = self.layer2.output

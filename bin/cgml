@@ -4,39 +4,21 @@ import sys
 import argparse
 import theano.tensor as T
 
-from cgml.data import makeRandomClassificationData
+from cgml.data import makeRandomClassificationData, makeRandomRegressionData
 from cgml.optimizers import MSGD
 from cgml.classifiers import LogRegClassifier,MultiLayerPerceptronClassifier
-from cgml.costs import negativeLogLikelihood
-from cgml.errors import misclassificationRate
+#from cgml.costs import negativeLogLikelihood,squaredLoss
 from cgml.bench import trainTestBench
-from cgml.argparse_actions import Model,ModelAction
-import cgml.argparse_defaults as defaults
+from cgml.argparse_actions import giveArgs
+#import cgml.argparse_defaults as defaults
 
-parser = argparse.ArgumentParser( description = 'Machine Learning with Computational Graphs.')
-
-parser.add_argument(
-    '--model',
-    metavar = 'model',
-    choices = ModelAction.choices,
-    action  = ModelAction,
-    help    = 'Model',
-    dest    = 'Model',
-    default = ModelAction.default) #Model(defaults.model))
-
-#parser.add_argument(
-#    '--cost',
-#    choices = CostAction.choices,
-#    action  = CostAction,
-#    help    = 'Cost function to use',
-#    dest    = cost
-#    default = CostAction.default)
-
-args = parser.parse_args()
+args = giveArgs()
 
 outStream = sys.stdout
 
-outStream.write('Using model ' +  str(args.Model) + '...\n')
+outStream.write('Using the following configuration:\n')
+outStream.write(' --model ' + str(args.Model) + '\n')
+outStream.write(' --cost  ' + str(args.Cost)  + '\n')
 
 n = 20
 n_in  = 5
@@ -51,27 +33,30 @@ model = args.Model(
     n_in  = n_in,
     n_out = n_out)
 
-# Define cost as the negative log-likelihood
-nll_cost = negativeLogLikelihood(
-    y_prob = model.y_prob,
-    y      = y)
+cost = args.Cost(model.output,y)
 
 # Use mini-batch stochastic gradient descent to optimize parameters 
 msgd_optimizer = MSGD(
-    cost      = nll_cost,
+    cost      = cost,
     params    = model.params,
     learnRate = learnRate)
 
 # Define how to quantify error
-misclass_error = misclassificationRate(
-    y_pred = model.y_pred,
-    y      = y)
+if type(model) == MultiLayerPerceptronClassifier or type(model) == LogRegClassifier:
+    
+    # Some random data for classification
+    x_train,y_train = makeRandomClassificationData(
+        n     = n,
+        n_in  = n_in,
+        n_out = n_out)
+    
+else:
 
-# Some random data 
-x_train,y_train = makeRandomClassificationData(
-    n     = n,
-    n_in  = n_in,
-    n_out = n_out)
+    # Some random data for regression
+    x_train, y_train = makeRandomRegressionData(
+        n = n,
+        n_in = n_in,
+        n_out = n_out)
 
 # Start the test bench
 trainTestBench(
@@ -82,9 +67,8 @@ trainTestBench(
     x_test    = x_train,
     y_test    = y_train,
     model     = model,
-    cost      = nll_cost,
+    cost      = cost,
     optimizer = msgd_optimizer,
-    error     = misclass_error,
     verbose   = True)
 
 
