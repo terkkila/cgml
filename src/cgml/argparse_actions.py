@@ -1,17 +1,9 @@
 
-
 import argparse
 from classifiers import LogRegClassifier,MultiLayerPerceptronClassifier
+from autoencoders import AutoEncoder
 
-class Model(object):
-
-    def __init__(self,modelStr):
-        if modelStr == 'logreg':
-            self.model_ = LogRegClassifier
-        elif modelStr == 'mlp':
-            self.model_ = MultiLayerPerceptronClassifier
-        else:
-            self.model_ = None
+class Callable:
 
     def __repr__(self):
         return self.model_.__name__
@@ -22,12 +14,26 @@ class Model(object):
     def __call__(self,*args,**kwargs):
         return self.model_(*args,**kwargs)
 
-class ModelAction(argparse.Action):
-    def __call__(self,parser,namespace,value,option_string=None):
-        try:  #Catch the runtime error if it occurs.
-           l = Model(value) 
-        except RuntimeError as E:
-           #Optional:  Print some other error here.  for example: `print E; exit(1)`  
-           parser.error()
 
-        setattr(namespace,self.dest,l) 
+class Model(Callable):
+
+    def __init__(self,modelStr):
+        if modelStr == 'logreg':
+            self.model_ = LogRegClassifier
+        elif modelStr == 'mlp':
+            self.model_ = MultiLayerPerceptronClassifier
+        elif modelStr == 'ae':
+            self.model_ = AutoEncoder
+        else:
+            self.model_ = None
+
+class ModelAction(argparse.Action):
+
+    choices = ['logreg','mlp','ae']
+    default = Model('logreg')
+    
+    def __call__(self, parser, namespace, choice, option_string = None):
+
+        model = Model(choice) 
+        setattr(namespace,self.dest,model) 
+

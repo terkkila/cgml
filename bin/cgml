@@ -10,7 +10,7 @@ from cgml.classifiers import LogRegClassifier,MultiLayerPerceptronClassifier
 from cgml.costs import negativeLogLikelihood
 from cgml.errors import misclassificationRate
 from cgml.bench import trainTestBench
-from cgml.argparse_actions import ModelAction
+from cgml.argparse_actions import Model,ModelAction
 import cgml.argparse_defaults as defaults
 
 parser = argparse.ArgumentParser( description = 'Machine Learning with Computational Graphs.')
@@ -18,11 +18,19 @@ parser = argparse.ArgumentParser( description = 'Machine Learning with Computati
 parser.add_argument(
     '--model',
     metavar = 'model',
-    choices = ['logreg','mlp'],
+    choices = ModelAction.choices,
     action  = ModelAction,
     help    = 'Model',
     dest    = 'Model',
-    default = defaults.model)
+    default = ModelAction.default) #Model(defaults.model))
+
+#parser.add_argument(
+#    '--cost',
+#    choices = CostAction.choices,
+#    action  = CostAction,
+#    help    = 'Cost function to use',
+#    dest    = cost
+#    default = CostAction.default)
 
 args = parser.parse_args()
 
