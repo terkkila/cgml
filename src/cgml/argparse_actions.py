@@ -81,6 +81,28 @@ def giveArgs():
         default  = CostAction.default,
         required = True)
 
+    parser.add_argument(
+        '--trainData',
+        help     = 'Data for training',
+        dest     = 'trainData',
+        default  = None,
+        required = True)
+
+    parser.add_argument(
+        '--testData',
+        help     = 'Data for testing',
+        dest     = 'testData',
+        default  = None,
+        required = True)
+
+    parser.add_argument(
+        '--learnRate',
+        help = 'Learning rate for the stochastic gradient descent algorithm',
+        type = float,
+        dest = 'learnRate',
+        default = None,
+        required = True)
+    
     args = parser.parse_args()
     
     return args

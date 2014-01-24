@@ -3,7 +3,9 @@
 import sys
 import argparse
 import theano.tensor as T
+import numpy as np
 
+from cgml.io import readData
 from cgml.data import makeRandomClassificationData, makeRandomRegressionData
 from cgml.optimizers import MSGD
 from cgml.classifiers import LogRegClassifier,MultiLayerPerceptronClassifier
@@ -17,16 +19,29 @@ args = giveArgs()
 outStream = sys.stdout
 
 outStream.write('Using the following configuration:\n')
-outStream.write(' --model ' + str(args.Model) + '\n')
-outStream.write(' --cost  ' + str(args.Cost)  + '\n')
+outStream.write(' --model     ' + str(args.Model)      + '\n')
+outStream.write(' --cost      ' + str(args.Cost)       + '\n')
+outStream.write(' --trainData ' + args.trainData       + '\n')
+outStream.write(' --testData  ' + args.testData        + '\n')
+outStream.write(' --learnRate ' + str(args.learnRate)  + '\n')
 
-n = 20
-n_in  = 5
-n_out = 3
-learnRate = 0.1
+
+x_train, y_train = readData(args.trainData)
+x_test,  y_test  = readData(args.testData)
+
+
+n     = x_train.shape[0]
+n_in  = x_train.shape[1]
+n_out = len(np.unique(y_train))
+
+outStream.write('Data dimensions for training:\n' +
+                ' - ' + str(n)     + ' samples\n'  +
+                ' - ' + str(n_in)  + ' features\n' +
+                ' - ' + str(n_out) + ' classes\n')
 
 x = T.dmatrix('x')
 y = T.ivector('y')
+
 
 model = args.Model(
     x     = x,
@@ -35,28 +50,13 @@ model = args.Model(
 
 cost = args.Cost(model.output,y)
 
+
 # Use mini-batch stochastic gradient descent to optimize parameters 
 msgd_optimizer = MSGD(
     cost      = cost,
     params    = model.params,
-    learnRate = learnRate)
+    learnRate = args.learnRate)
 
-# Define how to quantify error
-if type(model) == MultiLayerPerceptronClassifier or type(model) == LogRegClassifier:
-    
-    # Some random data for classification
-    x_train,y_train = makeRandomClassificationData(
-        n     = n,
-        n_in  = n_in,
-        n_out = n_out)
-    
-else:
-
-    # Some random data for regression
-    x_train, y_train = makeRandomRegressionData(
-        n = n,
-        n_in = n_in,
-        n_out = n_out)
 
 # Start the test bench
 trainTestBench(
@@ -64,8 +64,8 @@ trainTestBench(
     y         = y,
     x_train   = x_train,
     y_train   = y_train,
-    x_test    = x_train,
-    y_test    = y_train,
+    x_test    = x_test,
+    y_test    = y_test,
     model     = model,
     cost      = cost,
     optimizer = msgd_optimizer,
