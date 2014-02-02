@@ -59,7 +59,7 @@ class CostAction(argparse.Action):
         setattr(namespace, self.dest, cost)
 
 
-def giveArgs():
+def giveArgs(log = None):
 
     parser = argparse.ArgumentParser( description = 'Machine Learning with Computational Graphs.')
     
@@ -104,6 +104,15 @@ def giveArgs():
         required = True)
     
     args = parser.parse_args()
+
+    if log:
+
+        log.write('Parsed the following arguments:\n')
+        log.write(' --model     ' + str(args.Model)      + '\n')
+        log.write(' --cost      ' + str(args.Cost)       + '\n')
+        log.write(' --trainData ' + args.trainData       + '\n')
+        log.write(' --testData  ' + args.testData        + '\n')
+        log.write(' --learnRate ' + str(args.learnRate)  + '\n')
     
     return args
 

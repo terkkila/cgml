@@ -14,21 +14,12 @@ from cgml.bench import trainTestBench
 from cgml.argparse_actions import giveArgs
 #import cgml.argparse_defaults as defaults
 
-args = giveArgs()
-
 outStream = sys.stdout
 
-outStream.write('Using the following configuration:\n')
-outStream.write(' --model     ' + str(args.Model)      + '\n')
-outStream.write(' --cost      ' + str(args.Cost)       + '\n')
-outStream.write(' --trainData ' + args.trainData       + '\n')
-outStream.write(' --testData  ' + args.testData        + '\n')
-outStream.write(' --learnRate ' + str(args.learnRate)  + '\n')
-
+args = giveArgs(log = outStream)
 
 x_train, y_train = readData(args.trainData)
 x_test,  y_test  = readData(args.testData)
-
 
 n     = x_train.shape[0]
 n_in  = x_train.shape[1]

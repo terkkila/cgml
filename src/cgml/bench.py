@@ -59,8 +59,8 @@ def trainTestBench(x = None,
 
     if verbose:
         print "\nAFTER TRAINING"
-        print "Prediction:  ", predict(x_train)
-        print "Ground truth:", y_train
+        print "Prediction:  ", predict(x_test)
+        print "Ground truth:", y_test
         print "Cost:       ", test_model(0,n_test)
         
 
