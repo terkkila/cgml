@@ -102,6 +102,21 @@ def giveArgs(log = None):
         dest = 'learnRate',
         default = None,
         required = True)
+
+    parser.add_argument(
+        '--nClasses',
+        help = 'How many classes if it is a classification problem',
+        type = int,
+        dest = 'nClasses',
+        default = None,
+        required = True)
+
+    parser.add_argument(
+        '--nPasses',
+        help = 'How many passes through the data we go',
+        type = int,
+        default = None,
+        required = True)
     
     args = parser.parse_args()
 
@@ -113,7 +128,9 @@ def giveArgs(log = None):
         log.write(' --trainData ' + args.trainData       + '\n')
         log.write(' --testData  ' + args.testData        + '\n')
         log.write(' --learnRate ' + str(args.learnRate)  + '\n')
-    
+        log.write(' --nClasses  ' + str(args.nClasses)   + '\n')
+        log.write(' --nPasses   ' + str(args.nPasses)    + '\n')
+        
     return args
 
 

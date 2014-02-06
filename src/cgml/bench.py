@@ -1,4 +1,5 @@
 
+import numpy.random
 import theano
 import theano.tensor as T
 from data import makeShared
@@ -32,35 +33,45 @@ def trainTestBench(x = None,
     n_train = x_train.shape[0]
     n_test  = x_test.shape[0]
     
+    ics = T.lvector('ics')
     
-    idx1,idx2 = T.iscalars('idx1','idx2')
-    
-    train_model = theano.function(inputs  = [idx1,idx2],
+    train_model = theano.function(inputs  = [ics],
                                   outputs = cost,
                                   updates = optimizer.updates,
-                                  givens  = {x:x_train_sh[idx1:idx2],y:y_train_sh[idx1:idx2]} )
+                                  givens  = {x:x_train_sh[ics],y:y_train_sh[ics]} )
     
     
-    test_model = theano.function(inputs  = [idx1,idx2],
+    test_model = theano.function(inputs  = [ics],
                                  outputs = cost,
-                                 givens  = {x:x_test_sh[idx1:idx2],y:y_test_sh[idx1:idx2]} )
-    
-    nEpochs = 50
+                                 givens  = {x:x_test_sh[ics],y:y_test_sh[ics]} )
+
+    nDraws = n_train
+    nMiniBatch = 5
 
     if verbose:
         print "\nBEFORE TRAINING"
         print "Prediction:  ", predict(x_train)
         print "Ground truth:", y_train
-        print "Cost:       ", test_model(0,n_test)
+        print "Cost:       ",  test_model(range(n_test))
     
-    for epoch in range(nEpochs):
-        for idx in range(n_train-5):
-            train_model(idx,idx+5)
+    for draw in range(nDraws):
+        ics = numpy.random.randint(0,n_train,nMiniBatch)
+        train_model(ics)
 
     if verbose:
         print "\nAFTER TRAINING"
         print "Prediction:  ", predict(x_test)
         print "Ground truth:", y_test
-        print "Cost:       ", test_model(0,n_test)
+        print "Cost:       ",  test_model(range(n_test))
         
+
+
+
+
+
+
+
+
+
+
 

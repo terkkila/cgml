@@ -5,34 +5,27 @@ import argparse
 import theano.tensor as T
 import numpy as np
 
-from cgml.io import readData
+from cgml.io import DataReader
 from cgml.data import makeRandomClassificationData, makeRandomRegressionData
 from cgml.optimizers import MSGD
 from cgml.classifiers import LogRegClassifier,MultiLayerPerceptronClassifier
 #from cgml.costs import negativeLogLikelihood,squaredLoss
-from cgml.bench import trainTestBench
+#from cgml.bench import trainTestBench
+from cgml.trainers import OnlineTrainer
 from cgml.argparse_actions import giveArgs
-#import cgml.argparse_defaults as defaults
 
 outStream = sys.stdout
 
 args = giveArgs(log = outStream)
 
-x_train, y_train = readData(args.trainData)
-x_test,  y_test  = readData(args.testData)
+drTrain = DataReader(args.trainData)
+drTest  = DataReader(args.testData)
 
-n     = x_train.shape[0]
-n_in  = x_train.shape[1]
-n_out = len(np.unique(y_train))
-
-outStream.write('Data dimensions for training:\n' +
-                ' - ' + str(n)     + ' samples\n'  +
-                ' - ' + str(n_in)  + ' features\n' +
-                ' - ' + str(n_out) + ' classes\n')
+n_in = drTrain.nInputs
+n_out = args.nClasses
 
 x = T.dmatrix('x')
-y = T.ivector('y')
-
+y = T.lvector('y')
 
 model = args.Model(
     x     = x,
@@ -41,27 +34,25 @@ model = args.Model(
 
 cost = args.Cost(model.output,y)
 
-
 # Use mini-batch stochastic gradient descent to optimize parameters 
 msgd_optimizer = MSGD(
     cost      = cost,
     params    = model.params,
     learnRate = args.learnRate)
 
+oTrainer = OnlineTrainer(
+    x = x,
+    y = y,
+    model = model,
+    cost = cost,
+    optimizer = msgd_optimizer)
 
-# Start the test bench
-trainTestBench(
-    x         = x,
-    y         = y,
-    x_train   = x_train,
-    y_train   = y_train,
-    x_test    = x_test,
-    y_test    = y_test,
-    model     = model,
-    cost      = cost,
-    optimizer = msgd_optimizer,
-    verbose   = True)
+for passIdx in xrange(args.nPasses):
 
+    for x_train,y_train in drTrain:
+        oTrainer.update(x_train,y_train)
+
+    drTrain.rewind()
 
 
 
