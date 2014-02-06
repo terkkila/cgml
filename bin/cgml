@@ -6,55 +6,80 @@ import theano.tensor as T
 import numpy as np
 
 from cgml.io import DataReader
-from cgml.data import makeRandomClassificationData, makeRandomRegressionData
 from cgml.optimizers import MSGD
-from cgml.classifiers import LogRegClassifier,MultiLayerPerceptronClassifier
-#from cgml.costs import negativeLogLikelihood,squaredLoss
-#from cgml.bench import trainTestBench
 from cgml.trainers import OnlineTrainer
+from cgml.predictors import OnlinePredictor
 from cgml.argparse_actions import giveArgs
 
+# Where do we want the logs to go to
+logStream = sys.stderr
+
+# Where do we want the outputs to go to
 outStream = sys.stdout
 
-args = giveArgs(log = outStream)
+# Parsing the arguments
+args = giveArgs(log = logStream)
 
+# Data reader for training
 drTrain = DataReader(args.trainData)
+
+# Data reader for prediction
 drTest  = DataReader(args.testData)
 
+# How many input attributes
 n_in = drTrain.nInputs
+
+# How many class labels to predict
 n_out = args.nClasses
 
+# Symbolic input matrix
 x = T.dmatrix('x')
+
+# Symbolic output vector
 y = T.lvector('y')
 
+# Create the model
 model = args.Model(
     x     = x,
     n_in  = n_in,
     n_out = n_out)
 
+# Create cost function
 cost = args.Cost(model.output,y)
 
-# Use mini-batch stochastic gradient descent to optimize parameters 
+# Use mini-batch stochastic gradient descent to optimize parameters
+# NOTE: make selectable
 msgd_optimizer = MSGD(
     cost      = cost,
     params    = model.params,
     learnRate = args.learnRate)
 
+# Create the online trainer
 oTrainer = OnlineTrainer(
     x = x,
     y = y,
-    model = model,
     cost = cost,
     optimizer = msgd_optimizer)
 
+# Create the online predictor
+oPredictor = OnlinePredictor(
+    x = x,
+    model = model)
+
+# Start training. Loops through the training data nPasses times
 for passIdx in xrange(args.nPasses):
 
     for x_train,y_train in drTrain:
         oTrainer.update(x_train,y_train)
 
+    # After each successful pass, rewind the data reader for training
     drTrain.rewind()
 
-
+# Start prediction
+for x_test,y_test in drTest:
+    outStream.write( '\t'.join(map(str,[y_test[0],
+                                        oPredictor.predict(x_test)])) + '\n' )
+    
 
 
 
