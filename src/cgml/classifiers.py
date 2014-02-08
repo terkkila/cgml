@@ -38,19 +38,21 @@ class MultiLayerPerceptronClassifier(object):
     def __init__(self,
                  x = None,
                  n_in = None,
+                 n_middle = None,
                  n_out = None,
                  randomInit = True):
 
-        n_out1 = min(n_out,n_in/2)
+        if not n_middle:
+            n_middle = min(n_out,n_in/2)
         
         self.layer1 = Layer(input = x,
                             n_in = n_in,
-                            n_out = n_out1,
+                            n_out = n_middle,
                             activation = T.tanh,
                             randomInit = randomInit)
 
         self.layer2 = Layer(input = self.layer1.output,
-                            n_in = n_out1,
+                            n_in = n_middle,
                             n_out = n_out,
                             activation = T.nnet.softmax,
                             randomInit = randomInit)
