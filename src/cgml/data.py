@@ -29,13 +29,14 @@ def makeShared(data, borrow=True):
     """
 
     return theano.shared(np.asarray(data,
-                                      dtype = theano.config.floatX),
-                           borrow = borrow)
+                                    dtype = theano.config.floatX),
+                         borrow = borrow)
     
 
-def makeRandomSharedLayerParams(n_in = None,
+def makeSharedLayerParams(n_in = None,
                           n_out      = None,
-                          activation = None):
+                          activation = None,
+                          randomInit = True):
     
     # `W` is initialized with `W_values` which is uniformely sampled
     # from sqrt(-6./(n_in+n_hidden)) and sqrt(6./(n_in+n_hidden))
@@ -48,20 +49,30 @@ def makeRandomSharedLayerParams(n_in = None,
     #        should use 4 times larger initial weights for sigmoid
     #        compared to tanh
     #        We have no info for other function, so we use the same as tanh.
-    W_values = np.asarray(np.random.uniform(low  = -np.sqrt(6. / (n_in + n_out)),
-                                            high = np.sqrt(6. / (n_in + n_out)),
-                                            size = (n_in, n_out) ),
-                          dtype = theano.config.floatX)
+    if randomInit:
+        W_values = np.asarray(np.random.uniform(low  = -np.sqrt(6. / (n_in + n_out)),
+                                                high = np.sqrt(6. / (n_in + n_out)),
+                                                size = (n_in, n_out) ),
+                              dtype = theano.config.floatX)
 
-    if activation == T.nnet.sigmoid:
-        W_values *= 4
-        
+        # If the activation function happens to be sigmoid,
+        # we multiply the weights by 4
+        if activation == T.nnet.sigmoid:
+            W_values *= 4
+
+    # In case we do not want random weights, we set all of them to zero
+    else:
+        W_values = np.zeros((n_in,n_out), dtype = theano.config.floatX)
+
+    # Make W shared theano variable
     W = theano.shared(value = W_values, name = 'W')
-        
+
+    # ... and make b shared theano variable
     b_values = np.zeros((n_out,), dtype = theano.config.floatX)
     b = theano.shared(value = b_values, name='b')
 
     return W,b
+
 
 
 
