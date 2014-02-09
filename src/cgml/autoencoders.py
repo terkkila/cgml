@@ -3,7 +3,9 @@ from layers import Layer
 
 class AutoEncoder(object):
 
-    def __init__(self, x = None, n_in = None):
+    def __init__(self,
+                 x = None,
+                 n_in = None):
 
         self.encoder = Layer(input = x,
                              n_in = n_in,

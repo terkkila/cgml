@@ -33,7 +33,8 @@ def makeShared(data, borrow=True):
                          borrow = borrow)
     
 
-def makeSharedLayerParams(n_in = None,
+def makeSharedLayerParams(rng        = None,
+                          n_in       = None,
                           n_out      = None,
                           activation = None,
                           randomInit = True):
@@ -50,7 +51,7 @@ def makeSharedLayerParams(n_in = None,
     #        compared to tanh
     #        We have no info for other function, so we use the same as tanh.
     if randomInit:
-        W_values = np.asarray(np.random.uniform(low  = -np.sqrt(6. / (n_in + n_out)),
+        W_values = np.asarray(rng.uniform(low  = -np.sqrt(6. / (n_in + n_out)),
                                                 high = np.sqrt(6. / (n_in + n_out)),
                                                 size = (n_in, n_out) ),
                               dtype = theano.config.floatX)

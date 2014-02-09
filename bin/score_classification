@@ -1,0 +1,13 @@
+#!/usr/bin/gawk -f
+
+$1 == $2 {
+   nPos++;
+}
+
+$1 != $2 {
+   nNeg++;
+}
+
+END {
+   print "misclassification% " 100 * nNeg / (nNeg + nPos) "\n"
+}

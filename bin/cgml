@@ -40,6 +40,9 @@ y = T.lvector('y')
 # Create the model
 model = ComputationalGraph(x,args.cg)
 
+# Write description of the model to log
+logStream.write(str(model))
+
 Cost = None
 
 if model.schema['type'] == 'classifier':

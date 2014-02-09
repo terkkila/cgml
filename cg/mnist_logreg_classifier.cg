@@ -1,0 +1,8 @@
+description: MNIST digit classifier as Computational Graph
+type: classifier
+n_in: 784
+n_out: 10
+randomInit: True
+graph:
+- softmax 10
+
