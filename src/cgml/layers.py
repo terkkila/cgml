@@ -12,7 +12,9 @@ class Layer(object):
                  randomInit = True):
 
         self.input = input
-
+        self.n_in  = n_in
+        self.n_out = n_out
+        
         self.W,self.b = makeSharedLayerParams(n_in       = n_in,
                                               n_out      = n_out,
                                               activation = activation,

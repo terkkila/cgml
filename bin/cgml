@@ -10,6 +10,8 @@ from cgml.optimizers import MSGD
 from cgml.trainers import OnlineTrainer
 from cgml.predictors import OnlinePredictor
 from cgml.argparse_actions import giveArgs
+from cgml.computational_graph import ComputationalGraph
+from cgml.costs import nllCost
 
 # Where do we want the logs to go to
 logStream = sys.stderr
@@ -29,9 +31,6 @@ drTest  = DataReader(args.testData)
 # How many input attributes
 n_in = drTrain.nInputs
 
-# How many class labels to predict
-n_out = args.nClasses
-
 # Symbolic input matrix
 x = T.dmatrix('x')
 
@@ -39,13 +38,17 @@ x = T.dmatrix('x')
 y = T.lvector('y')
 
 # Create the model
-model = args.Model(
-    x     = x,
-    n_in  = n_in,
-    n_out = n_out)
+model = ComputationalGraph(x,args.cg)
+
+Cost = None
+
+if model.schema['type'] == 'classifier':
+    Cost = nllCost
+else:
+    raise Exception('Only classification possible right now!')
 
 # Create cost function
-cost = args.Cost(model.output,y)
+cost = Cost(model.output,y)
 
 # Use mini-batch stochastic gradient descent to optimize parameters
 # NOTE: make selectable

@@ -9,7 +9,7 @@ def readData(fileName):
     y = yx[range(yx.shape[0]),0]
 
     return x,y
-
+    
 class DataReader(object):
 
     def __init__(self,fileName):

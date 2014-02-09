@@ -14,10 +14,10 @@ python setup.py install
 ## Specifying a Computational Graph
 
 Graph can be of type 
-- class (classification)
-- reg   (regression)
-- ae    (autoencoder)
-- rl    (reinforcement learning)
+- classifier 
+- regressor
+- autoencoder
+- reinforcement-learner
 
 Graph needs to start with an input layer, and end with an output layer
 
@@ -30,46 +30,19 @@ Possible transformations are:
 - tanh
 - softmax
 
-An example graph to classify 4-dimensional input to 8 classes:
+An example graph to classify the 28x28 pixel MNIST images to 10 classes: 
 ```
-#classifier.cg
-graph class
-layer input 4
-trans tanh
-layer hidden 10
-trans softmax
-layer output 8
-```
-
-An example graph to regress on 4-dimensional input:
-```
-#regressor.cg
-graph reg
-layer input 4
-trans tanh
-layer hidden 10
-trans linear
-layer output 1
+description: MNIST digit classifier as Computational Graph
+type: classifier
+n_in: 784
+n_out: 10
+randomInit: True
+graph:
+- tanh 300
+- softmax 10
 ```
 
-And example graph to encode 4-dimensional input to 2 dimensions:
+## Usage
 ```
-#autoencoder.cg
-graph ae
-layer input 4
-trans tanh 
-layer output 2
+cgml --cg mnist_classifier.cg --trainData mnist_train.tsv --testData mnist_test.tsv --learnRate 0.01 --nPasses 10
 ```
-
-An example graph for reinforcement learning 8-dimensional actions from
-4-dimensional state space:
-```
-#rl.cg
-graph rl
-layer input 4
-trans tanh
-layer hidden 10
-trans softmax
-layer output 8
-```
-
