@@ -30,19 +30,17 @@ Possible transformations are:
 - tanh
 - softmax
 
-An example graph to classify the 28x28 pixel MNIST images to 10 classes: 
+Directory cg/ has some example computational graphs:
 ```
-description: MNIST digit classifier as Computational Graph
-type: classifier
-n_in: 784
-n_out: 10
-randomInit: True
-graph:
-- tanh 300
-- softmax 10
+cg/mnist_logreg_classifier.cg
+cg/mnist_mlp_classifier.cg
 ```
 
 ## Usage
+To see Logistic Regression in action, try:
 ```
-cgml --cg mnist_classifier.cg --trainData mnist_train.tsv --testData mnist_test.tsv --learnRate 0.01 --nPasses 10
+cgml --cg mnist_logreg_classifier.cg --trainData mnist_train.tsv --testData mnist_test.tsv --learnRate 0.01 --nPasses 10 | bin/score_classification
+
+To see Multilayer perceptron in action, try:
+cgml --cg mnist_mlp_classifier.cg --trainData mnist_train.tsv --testData mnist_test.tsv --learnRate 0.01 --nPasses 10 | bin/score_classification
 ```
