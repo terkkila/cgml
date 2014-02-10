@@ -10,63 +10,40 @@ activationMap = {'linear':  None,
                  'sigmoid': T.nnet.sigmoid,
                  'tanh':    T.tanh,
                  'softmax': T.nnet.softmax}
-
-def parseLayerStr(layerStr):
-
-    try:
-        elems      = layerStr.split(' ')
-        activation = activationMap[elems[0]]
-        n_out      = int(elems[1])
-    except:
-        raise Exception('Cannot parse layer in graph: ' + layerStr)
-
-    return activation,n_out
-
     
 def parseLayers(x,schema):
 
     rng = np.random.RandomState(1234)
-    
+
     # Layers of the graph
     layers = []
 
-    # Number of inputs 
-    n_in = schema['n_in']
-
     # Should we initialize the weights randomly, or set them to zero?
     randomInit = schema['randomInit']
-    
-    # Parse the type of the activation function, and dimensionality
-    # of the output of the activation (maps to input of next layer)
-    activation,n_out = parseLayerStr(schema['graph'][0])
 
+    # Obtain a shortcut to the first layer
+    currLayer = schema['graph'][0]
+    
     # Create the first layer of the graph
     layers.append( Layer(rng        = rng,
                          input      = x,
-                         n_in       = n_in,
-                         n_out      = n_out,
-                         activation = activation,
+                         n_in       = currLayer['n_in'],
+                         n_out      = currLayer['n_out'],
+                         activation = activationMap[ currLayer['activation'] ],
                          randomInit = randomInit) )
 
     # Create subsequent layers of the graph
     for i in xrange(1,len(schema['graph'])):
 
-        n_in = layers[i-1].n_out
-
-        activation,n_out = parseLayerStr(schema['graph'][i])
-
+        prevLayer = layers[i-1]
+        currLayer = schema['graph'][i]
+        
         layers.append( Layer(rng        = rng,
-                             input      = layers[i-1].output,
-                             n_in       = n_in,
-                             n_out      = n_out,
-                             activation = activation,
+                             input      = prevLayer.output,
+                             n_in       = prevLayer.n_out,
+                             n_out      = currLayer['n_out'],
+                             activation = activationMap[currLayer['activation']],
                              randomInit = randomInit) )
-
-    if layers[-1].n_out != schema['n_out']:
-        raise Exception('Dimensionality of the output of the last layer (' +
-                        str(layers[-1].n_out) + ') does not match that ' +
-                        'specified in the schema (' + str(schema['n_out']) +
-                        ')')
 
     return layers
         
@@ -81,9 +58,8 @@ class ComputationalGraph(object):
         # Load schema from input file
         self.schema = yaml.load(open(fileName,'r'))
 
-        # Take the number of inputs and outputs from the schema
-        self.n_in  = self.schema['n_in']
-        self.n_out = self.schema['n_out']
+        # Take the number of inputs from the schema
+        self.n_in  = self.schema['input']['n_in']
 
         # Parse layers from the schema. Input is needed to clamp
         # it with the first layer
@@ -96,6 +72,9 @@ class ComputationalGraph(object):
 
         # Clamp output to the output of the last layer of the graph
         self.output = self.layers[-1].output
+
+        # The number of outputs is obtained from the output layer of the graph
+        self.n_out  = self.schema['graph'][-1]['n_out']
 
     def __str__(self):
 
