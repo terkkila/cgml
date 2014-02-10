@@ -40,7 +40,7 @@ cg/mnist_mlp_classifier.cg
 
 To see Logistic Regression in action, try:
 ```
-cgml --cg mnist_logreg_classifier.cg \
+cgml --cg cg/mnist_logreg_classifier.cg \
      --trainData mnist_train.tsv \
      --testData mnist_test.tsv \
      --learnRate 0.01 \
@@ -50,7 +50,7 @@ cgml --cg mnist_logreg_classifier.cg \
 
 To see Multilayer Perceptron in action, try:
 ```
-cgml --cg mnist_mlp_classifier.cg \
+cgml --cg cg/mnist_mlp_classifier.cg \
      --trainData mnist_train.tsv \
      --testData mnist_test.tsv \
      --learnRate 0.01 \
