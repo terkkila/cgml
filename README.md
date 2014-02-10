@@ -37,10 +37,13 @@ cg/mnist_mlp_classifier.cg
 ```
 
 ## Usage
+
 To see Logistic Regression in action, try:
 ```
 cgml --cg mnist_logreg_classifier.cg --trainData mnist_train.tsv --testData mnist_test.tsv --learnRate 0.01 --nPasses 10 | bin/score_classification
+```
 
-To see Multilayer perceptron in action, try:
+To see Multilayer Perceptron in action, try:
+```
 cgml --cg mnist_mlp_classifier.cg --trainData mnist_train.tsv --testData mnist_test.tsv --learnRate 0.01 --nPasses 10 | bin/score_classification
 ```
