@@ -31,26 +31,34 @@ def giveArgs(log = None):
         help = 'Learning rate for the stochastic gradient descent algorithm',
         type = float,
         dest = 'learnRate',
-        default = None,
-        required = True)
+        default = 0.01,
+        required = False)
 
     parser.add_argument(
         '--nPasses',
         help = 'How many passes through the data we go',
         type = int,
+        default = 1,
+        required = False)
+
+    parser.add_argument(
+        '--log',
+        help = 'Provide log file',
+        type = str,
         default = None,
-        required = True)
+        required = False)
     
     args = parser.parse_args()
 
     if log:
 
-        log.write('Parsed the following arguments:\n')
+        log.write('\nParsed the following arguments:\n')
         log.write(' --cg        ' + str(args.cg)         + '\n')
         log.write(' --trainData ' + args.trainData       + '\n')
         log.write(' --testData  ' + args.testData        + '\n')
         log.write(' --learnRate ' + str(args.learnRate)  + '\n')
         log.write(' --nPasses   ' + str(args.nPasses)    + '\n')
+        log.write(' --log       ' + args.log             + '\n')
         
     return args
 

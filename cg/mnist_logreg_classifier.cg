@@ -2,11 +2,6 @@ description: MNIST digit classifier
 
 type: classifier
 
-input:
-
- n_in:    784
- dropout: 0.5
-
 randomInit: True
 
 graph:

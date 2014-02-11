@@ -2,11 +2,6 @@ description: MNIST digit classifier MLP
 
 type: classifier
 
-input:
-
-  n_in:    784
-  dropout: 0.2
-
 randomInit: True
 
 graph:
@@ -14,12 +9,12 @@ graph:
  - activation: tanh
    n_in:       784
    n_out:      300
-   dropout:    0.5
+   dropout:    0.0
 
  - activation: tanh
    n_in:       300
    n_out:      300
-   dropout:    0.5
+   dropout:    0.0
 
  - activation: softmax
    n_in:       300

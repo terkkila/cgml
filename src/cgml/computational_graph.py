@@ -1,7 +1,7 @@
 
 import numpy as np
 import theano.tensor as T
-from layers import Layer
+from layers import Layer,DropoutLayer
 import yaml
 
 allowedGraphs = ['classifier','regressor','autoencoder','reinforcement-learner']
@@ -16,84 +16,125 @@ def parseLayers(x,schema):
     rng = np.random.RandomState(1234)
 
     # Layers of the graph
+    dropoutLayers = []
     layers = []
-
+    
     # Should we initialize the weights randomly, or set them to zero?
     randomInit = schema['randomInit']
 
     # Obtain a shortcut to the first layer
-    currLayer = schema['graph'][0]
+    currDropoutLayer = schema['graph'][0]
     
     # Create the first layer of the graph
-    layers.append( Layer(rng        = rng,
-                         input      = x,
-                         n_in       = currLayer['n_in'],
-                         n_out      = currLayer['n_out'],
-                         activation = activationMap[ currLayer['activation'] ],
-                         randomInit = randomInit) )
+    dropoutLayers.append(
+        DropoutLayer(rng        = rng,
+                     input      = x,
+                     n_in       = currDropoutLayer['n_in'],
+                     n_out      = currDropoutLayer['n_out'],
+                     activation = activationMap[
+                         currDropoutLayer['activation'] ],
+                     randomInit = randomInit,
+                     p          = currDropoutLayer['dropout']) )
 
     # Create subsequent layers of the graph
     for i in xrange(1,len(schema['graph'])):
 
-        prevLayer = layers[i-1]
-        currLayer = schema['graph'][i]
+        prevDropoutLayer = dropoutLayers[i-1]
+        currDropoutLayer = schema['graph'][i]
         
-        layers.append( Layer(rng        = rng,
-                             input      = prevLayer.output,
-                             n_in       = prevLayer.n_out,
-                             n_out      = currLayer['n_out'],
-                             activation = activationMap[currLayer['activation']],
-                             randomInit = randomInit) )
+        dropoutLayers.append( DropoutLayer(rng        = rng,
+                                           input      = prevDropoutLayer.output,
+                                           n_in       = prevDropoutLayer.n_out,
+                                           n_out      = currDropoutLayer['n_out'],
+                                           activation = activationMap[
+                                               currDropoutLayer['activation'] ],
+                                           randomInit = randomInit,
+                                           p          = currDropoutLayer['dropout']) )
 
-    return layers
+    q = 1 - dropoutLayers[0].p
+        
+    layers = [ Layer(rng = rng,
+                     input = dropoutLayers[0].input,
+                     n_in  = dropoutLayers[0].n_in,
+                     n_out = dropoutLayers[0].n_out,
+                     activation = dropoutLayers[0].activation,
+                     W = dropoutLayers[0].W * q,
+                     b = dropoutLayers[0].b) ]
+
+    prevLayer = layers[0]
+    
+    for i in xrange(1,len(dropoutLayers)):
+
+        currDropoutLayer = dropoutLayers[i]
+        
+        q = 1 - currDropoutLayer.p
+        
+        layers.append( Layer(rng = rng,
+                             input = prevLayer.output,
+                             n_in  = prevLayer.n_out,
+                             n_out = currDropoutLayer.n_out,
+                             activation = currDropoutLayer.activation,
+                             W = currDropoutLayer.W * q,
+                             b = currDropoutLayer.b))
+
+        prevLayer = layers[-1]
+        
+    return layers,dropoutLayers
         
     
 class ComputationalGraph(object):
 
-    def __init__(self,x,fileName):
+    def __init__(self,
+                 input = None,
+                 cg    = None,
+                 log   = None):
 
         # Take symbolic representation of the input data
-        self.input = x
+        self.input = input
 
         # Load schema from input file
-        self.schema = yaml.load(open(fileName,'r'))
+        self.schema = yaml.load(open(cg,'r'))
 
-        # Take the number of inputs from the schema
-        self.n_in  = self.schema['input']['n_in']
+        if log:
+            log.write('Loaded the following schema: ' +
+                      str(self.schema) + '\n')
 
         # Parse layers from the schema. Input is needed to clamp
         # it with the first layer
-        self.layers = parseLayers(self.input,self.schema)
+        self.layers,self.dropoutLayers = parseLayers(self.input,self.schema)
 
+        # Take number of input variables
+        self.n_in = self.layers[0].n_in
+        
         # Collect parameters of all the layers
         self.params = []
-        for layer in self.layers:
-            self.params += layer.params
+        for dropoutLayer in self.dropoutLayers:
+            self.params += dropoutLayer.params
 
         # Clamp output to the output of the last layer of the graph
         self.output = self.layers[-1].output
 
+        self.dropoutOutput = self.dropoutLayers[-1].output
+        
         # The number of outputs is obtained from the output layer of the graph
         self.n_out  = self.schema['graph'][-1]['n_out']
 
     def __str__(self):
 
+        graphList = ['input(' + str(self.schema['graph'][0]['n_in']) + ',' +
+                     str(self.schema['graph'][0]['dropout']) + ')']
+        
+        for layer in self.schema['graph']:
+            graphList.append( layer['activation'] +
+                              '(' + str(layer['n_out']) + ',' +
+                              str(layer['dropout']) + ')')
+
+        graphStr = ' -> '.join(graphList)
+            
         return ("Computational graph:\n" +
                 " - description : " + self.schema['description'] + '\n' +
                 " - type        : " + self.schema['type']        + '\n' +
-                " - graph layout: " + str(self.schema['graph'])  + '\n' )
-
-
-
-
-
-
-
-
-
-
-
-
+                " - graph layout: " + graphStr )
 
 
 
