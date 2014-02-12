@@ -59,7 +59,8 @@ def _dropout_from_layer_input(rng   = None,
                          size = input.shape)
     # The cast is important because
     # int * float32 = float64 which pulls things off the gpu
-    return input * T.cast(mask, theano.config.floatX)
+    dropoutInput = input * T.cast(mask, theano.config.floatX)
+    return dropoutInput
     
 
 class DropoutLayer(Layer):

@@ -1,7 +1,8 @@
 
 import numpy as np
 import theano.tensor as T
-from layers import Layer,DropoutLayer
+from cgml.activations import linrect
+from cgml.layers import Layer,DropoutLayer
 import yaml
 
 allowedGraphs = ['classifier','regressor','autoencoder','reinforcement-learner']
@@ -9,7 +10,8 @@ allowedGraphs = ['classifier','regressor','autoencoder','reinforcement-learner']
 activationMap = {'linear':  None,
                  'sigmoid': T.nnet.sigmoid,
                  'tanh':    T.tanh,
-                 'softmax': T.nnet.softmax}
+                 'softmax': T.nnet.softmax,
+                 'linrect': linrect}
     
 def parseLayers(x,schema):
 
@@ -54,7 +56,7 @@ def parseLayers(x,schema):
     q = 1 - dropoutLayers[0].p
         
     layers = [ Layer(rng = rng,
-                     input = dropoutLayers[0].input,
+                     input = x,
                      n_in  = dropoutLayers[0].n_in,
                      n_out = dropoutLayers[0].n_out,
                      activation = dropoutLayers[0].activation,
@@ -80,7 +82,10 @@ def parseLayers(x,schema):
         prevLayer = layers[-1]
         
     return layers,dropoutLayers
-        
+
+
+def percent(x):
+    return '{0:3.2f}'.format(100*x) + '%'
     
 class ComputationalGraph(object):
 
@@ -107,10 +112,9 @@ class ComputationalGraph(object):
         self.n_in = self.layers[0].n_in
         
         # Collect parameters of all the layers
-        self.params = []
-        for dropoutLayer in self.dropoutLayers:
-            self.params += dropoutLayer.params
-
+        self.params = [param for layer in self.dropoutLayers
+                       for param in layer.params]
+        
         # Clamp output to the output of the last layer of the graph
         self.output = self.layers[-1].output
 
@@ -121,15 +125,15 @@ class ComputationalGraph(object):
 
     def __str__(self):
 
-        graphList = ['input(' + str(self.schema['graph'][0]['n_in']) + ',' +
-                     str(self.schema['graph'][0]['dropout']) + ')']
+        graphList = ['input(' + str(self.schema['graph'][0]['n_in']) + ')']
         
         for layer in self.schema['graph']:
-            graphList.append( layer['activation'] +
-                              '(' + str(layer['n_out']) + ',' +
-                              str(layer['dropout']) + ')')
+            
+            graphList.append('drop ' + percent(layer['dropout']) +
+                             ' -> ' + layer['activation'] +
+                              '(' + str(layer['n_out']) + ')')
 
-        graphStr = ' -> '.join(graphList)
+        graphStr = ' '.join(graphList)
             
         return ("Computational graph:\n" +
                 " - description : " + self.schema['description'] + '\n' +

@@ -58,7 +58,7 @@ def giveArgs(log = None):
         log.write(' --testData  ' + args.testData        + '\n')
         log.write(' --learnRate ' + str(args.learnRate)  + '\n')
         log.write(' --nPasses   ' + str(args.nPasses)    + '\n')
-        log.write(' --log       ' + args.log             + '\n')
+        log.write(' --log       ' + str(args.log)        + '\n')
         
     return args
 
