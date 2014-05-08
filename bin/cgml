@@ -11,7 +11,7 @@ from cgml.trainers import OnlineTrainer
 from cgml.predictors import OnlinePredictor
 from cgml.argparse_actions import giveArgs
 from cgml.computational_graph import ComputationalGraph
-from cgml.costs import nllCost
+from cgml.costs import nllCost,sqerrCost
 
 # Print outputs here
 outStream = sys.stdout
@@ -34,7 +34,7 @@ drTrain = DataReader(args.trainData)
 drTest  = DataReader(args.testData)
 
 # How many input attributes
-n_in = drTrain.nInputs
+n_in = drTrain.nCols
 
 # Symbolic input matrix
 x = T.dmatrix('x')
@@ -48,44 +48,86 @@ model = ComputationalGraph(input = x,
                            log   = log)
 
 # Write description of the model to infStream
-infStream.write('\n' + str(model) + '\n')
-
-Cost = None
+infStream.write('\n' + str(model) + '\n\n')
 
 if model.schema['type'] == 'classifier':
-    Cost = nllCost
+
+    infStream.write("Setting up the cost function\n")
+
+    cost = nllCost(model.dropoutOutput,y)
+
+    infStream.write("Setting up the optimizer\n")
+
+    # Use mini-batch stochastic gradient descent to optimize parameters
+    # NOTE: make selectable
+    # NOTE: embed into OnlineTrainer
+    msgd_optimizer = MSGD(
+        cost      = cost,
+        params    = model.params,
+        learnRate = args.learnRate)
+    
+    infStream.write("Setting up the trainer\n")
+
+    # Create the online trainer
+    oTrainer = OnlineTrainer(
+        x = x,
+        y = y,
+        cost = cost,
+        optimizer = msgd_optimizer)
+
+elif model.schema['type'] == 'autoencoder':
+
+    infStream.write("Setting up the cost function\n")
+
+    cost = sqerrCost(model.dropoutOutput,x)
+
+    infStream.write("Setting up the optimizer\n")
+
+    # Use mini-batch stochastic gradient descent to optimize parameters
+    # NOTE: make selectable
+    # NOTE: embed into OnlineTrainer
+    msgd_optimizer = MSGD(
+        cost      = cost,
+        params    = model.params,
+        learnRate = args.learnRate)
+    
+    infStream.write("Setting up the trainer\n")
+
+    # Create the online trainer
+    oTrainer = OnlineTrainer(
+        x = x,
+        y = None,
+        cost = cost,
+        optimizer = msgd_optimizer)
+    
 else:
-    raise Exception('Only classification possible right now!')
+    raise Exception('Cost function unavailable for CG schema type: ' + model.schema['type'])
 
-# Create cost function
-cost = Cost(model.dropoutOutput,y)
-
-# Use mini-batch stochastic gradient descent to optimize parameters
-# NOTE: make selectable
-msgd_optimizer = MSGD(
-    cost      = cost,
-    params    = model.params,
-    learnRate = args.learnRate)
-
-# Create the online trainer
-oTrainer = OnlineTrainer(
-    x = x,
-    y = y,
-    cost = cost,
-    optimizer = msgd_optimizer)
+infStream.write("Setting up the predictor\n")
 
 # Create the online predictor
 oPredictor = OnlinePredictor(
     x = x,
     model = model)
 
-infStream.write('\n')
+infStream.write('=> Done setting up the model!\n\n')
+infStream.write("Starting to read input data for training\n")
 
 # Start training. Loops through the training data nPasses times
 for passIdx in xrange(args.nPasses):
     
-    for x_train,y_train in drTrain:
-        oTrainer.update(x_train,y_train)
+    if model.schema['type'] != 'autoencoder':
+        
+        for vals in drTrain:
+            y_train,x_train = [vals[0][0]],[vals[0][1:]]
+            if model.schema['type'] == 'classifier':
+                y_train = [np.int(yi) for yi in y_train]
+            oTrainer.update(x_train,y_train)
+
+    else:
+
+        for x_train in drTrain:
+            oTrainer.update(x_train,None)
 
     infStream.write('Done with pass ' + str(passIdx) +
                     ', last known training cost is ' +
@@ -96,8 +138,13 @@ for passIdx in xrange(args.nPasses):
 
 infStream.write('\n')
     
+infStream.write("Starting to read data for prediction\n")
+
 # Start prediction
-for x_test,y_test in drTest:
+for vals in drTest:
+    y_test,x_test = [vals[0][0]],[vals[0][1:]]
+    if model.schema['type'] == 'classifier':
+        y_test = [np.int(yi) for yi in y_test]
     outStream.write( '\t'.join(map(str,[y_test[0],
                                         oPredictor.predict(x_test)])) + '\n' )
     

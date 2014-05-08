@@ -1,6 +1,7 @@
 
 import theano.tensor as T
 
+
 def nllCost(yhat, y):
     """Calculates the negative log-likelihood between
     the class probabilities and true class labels.
@@ -17,6 +18,8 @@ def sqerrCost(yhat, y):
 
     # Error
     e = y - yhat
+
+    print e.shape
 
     # Squared error
     return( T.sum(T.dot(e,e)) )
