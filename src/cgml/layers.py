@@ -2,7 +2,7 @@
 import theano
 import theano.tensor as T
 import theano.tensor.shared_randomstreams
-from data import makeSharedLayerParams
+from data import makeSharedWeightMatrix,makeSharedBiasVector
         
 class Layer(object):
 
@@ -21,22 +21,26 @@ class Layer(object):
         self.n_in  = n_in
         self.n_out = n_out
         self.activation = activation
-        
-        # If parameters for the layer are not given
-        if not W and not b:
 
-            # We create new shared layer parameters
-            self.W,self.b = makeSharedLayerParams(rng        = rng,
-                                                  n_in       = n_in,
-                                                  n_out      = n_out,
-                                                  activation = self.activation,
-                                                  randomInit = randomInit)
-        else:
 
-            # Otherwise we take the given parameters
-            self.W = W
-            self.b = b
-            
+        # Create W if not given
+        self.W = ( makeSharedWeightMatrix(rng = rng,
+                                          n_in = n_in,
+                                          n_out = n_out,
+                                          activation = self.activation,
+                                          randomInit = randomInit)
+                   if not W else W )
+
+
+        # Create b if not given
+        self.b = ( makeSharedBiasVector(rng = rng,
+                                        n_in = n_in,
+                                        n_out = n_out,
+                                        activation = self.activation,
+                                        randomInit = randomInit)
+                   if not b else b )
+
+
         # If activation function is defined, use it,
         # otherwise assign linear activation
         if self.activation != None:

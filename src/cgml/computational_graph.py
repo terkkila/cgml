@@ -12,10 +12,25 @@ activationMap = {'linear':  None,
                  'tanh':    T.tanh,
                  'softmax': T.nnet.softmax,
                  'linrect': linrect}
-    
+
 def parseLayers(x,schema):
 
     rng = np.random.RandomState(1234)
+
+    assert schema['type'] in allowedGraphs
+
+    schemaLayers = schema['graph']
+
+    nLayers = len(schemaLayers)
+
+    if schema['type'] == 'autoencoder':
+
+        if nLayers % 2 != 0:
+            raise Exception("Autoencoder graph must have even number of layers")
+        
+        for i in xrange(nLayers/2):
+            if schemaLayers[i]['n_in'] != schemaLayers[nLayers - 1 - i]['n_out']:
+                raise Exception("Autoencoder graph must be symmetric")
 
     # Layers of the graph
     dropoutLayers = []
@@ -24,62 +39,48 @@ def parseLayers(x,schema):
     # Should we initialize the weights randomly, or set them to zero?
     randomInit = schema['randomInit']
 
-    # Obtain a shortcut to the first layer
-    currDropoutLayer = schema['graph'][0]
-    
-    # Create the first layer of the graph
-    dropoutLayers.append(
-        DropoutLayer(rng        = rng,
-                     input      = x,
-                     n_in       = currDropoutLayer['n_in'],
-                     n_out      = currDropoutLayer['n_out'],
-                     activation = activationMap[
-                         currDropoutLayer['activation'] ],
-                     randomInit = randomInit,
-                     p          = currDropoutLayer['dropout']) )
+    lastOutput = x
+    lastNOut = schemaLayers[0]['n_in']
 
-    # Create subsequent layers of the graph
-    for i in xrange(1,len(schema['graph'])):
+    for i in xrange(nLayers):
 
-        prevDropoutLayer = dropoutLayers[i-1]
         currDropoutLayer = schema['graph'][i]
         
         dropoutLayers.append( DropoutLayer(rng        = rng,
-                                           input      = prevDropoutLayer.output,
-                                           n_in       = prevDropoutLayer.n_out,
+                                           input      = lastOutput,
+                                           n_in       = lastNOut,
                                            n_out      = currDropoutLayer['n_out'],
                                            activation = activationMap[
                                                currDropoutLayer['activation'] ],
                                            randomInit = randomInit,
                                            p          = currDropoutLayer['dropout']) )
 
-    q = 1 - dropoutLayers[0].p
-        
-    layers = [ Layer(rng = rng,
-                     input = x,
-                     n_in  = dropoutLayers[0].n_in,
-                     n_out = dropoutLayers[0].n_out,
-                     activation = dropoutLayers[0].activation,
-                     W = dropoutLayers[0].W * q,
-                     b = dropoutLayers[0].b) ]
+        if schema['type'] == 'autoencoder' and i >= nLayers/2:
+            dropoutLayers[-1].W = dropoutLayers[nLayers-1-i].W.T
 
-    prevLayer = layers[0]
-    
-    for i in xrange(1,len(dropoutLayers)):
+        lastOutput = dropoutLayers[-1].output
+        lastNOut   = dropoutLayers[-1].n_out
+
+
+    lastOutput = x
+    lastNOut = schemaLayers[0]['n_in']
+
+    for i in xrange(nLayers):
 
         currDropoutLayer = dropoutLayers[i]
         
         q = 1 - currDropoutLayer.p
         
         layers.append( Layer(rng = rng,
-                             input = prevLayer.output,
-                             n_in  = prevLayer.n_out,
+                             input = lastOutput,
+                             n_in  = lastNOut,
                              n_out = currDropoutLayer.n_out,
                              activation = currDropoutLayer.activation,
                              W = currDropoutLayer.W * q,
                              b = currDropoutLayer.b))
 
-        prevLayer = layers[-1]
+        lastOutput = layers[-1].output
+        lastNOut   = layers[-1].n_out
         
     return layers,dropoutLayers
 
@@ -103,6 +104,9 @@ class ComputationalGraph(object):
         if log:
             log.write('Loaded the following schema: ' +
                       str(self.schema) + '\n')
+
+        # Get model type
+        self.type = self.schema['type']
 
         # Parse layers from the schema. Input is needed to clamp
         # it with the first layer

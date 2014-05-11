@@ -19,7 +19,5 @@ def sqerrCost(yhat, y):
     # Error
     e = y - yhat
 
-    print e.shape
-
     # Squared error
-    return( T.sum(T.dot(e,e)) )
+    return( T.sum(T.dot(e,e.T)) )

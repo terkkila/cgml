@@ -31,13 +31,13 @@ def makeShared(data, borrow=True):
     return theano.shared(np.asarray(data,
                                     dtype = theano.config.floatX),
                          borrow = borrow)
-    
 
-def makeSharedLayerParams(rng        = None,
-                          n_in       = None,
-                          n_out      = None,
-                          activation = None,
-                          randomInit = True):
+
+def makeSharedWeightMatrix(rng        = None,
+                           n_in       = None,
+                           n_out      = None,
+                           activation = None,
+                           randomInit = True):
     
     # `W` is initialized with `W_values` which is uniformely sampled
     # from sqrt(-6./(n_in+n_hidden)) and sqrt(6./(n_in+n_hidden))
@@ -52,10 +52,10 @@ def makeSharedLayerParams(rng        = None,
     #        We have no info for other function, so we use the same as tanh.
     if randomInit:
         W_values = np.asarray(rng.uniform(low  = -np.sqrt(6. / (n_in + n_out)),
-                                                high = np.sqrt(6. / (n_in + n_out)),
-                                                size = (n_in, n_out) ),
+                                          high = np.sqrt(6. / (n_in + n_out)),
+                                          size = (n_in, n_out) ),
                               dtype = theano.config.floatX)
-
+        
         # If the activation function happens to be sigmoid,
         # we multiply the weights by 4
         if activation == T.nnet.sigmoid:
@@ -67,12 +67,22 @@ def makeSharedLayerParams(rng        = None,
 
     # Make W shared theano variable
     W = theano.shared(value = W_values, name = 'W')
+    
+    return W
 
+
+def makeSharedBiasVector(rng        = None,
+                         n_in       = None,
+                         n_out      = None,
+                         activation = None,
+                         randomInit = True):
+    
+    
     # ... and make b shared theano variable
     b_values = np.zeros((n_out,), dtype = theano.config.floatX)
     b = theano.shared(value = b_values, name='b')
 
-    return W,b
+    return b
 
 
 
