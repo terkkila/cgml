@@ -3,6 +3,7 @@ import numpy as np
 import theano.tensor as T
 from cgml.activations import linrect
 from cgml.layers import Layer,DropoutLayer
+from cgml.costs import nllCost,sqerrCost
 import yaml
 
 allowedGraphs = ['classifier','regressor','autoencoder','reinforcement-learner']
@@ -91,12 +92,13 @@ def percent(x):
 class ComputationalGraph(object):
 
     def __init__(self,
-                 input = None,
+                 x = None,
+                 y = None,
                  cg    = None,
                  log   = None):
 
         # Take symbolic representation of the input data
-        self.input = input
+        self.input = x
 
         # Load schema from input file
         self.schema = yaml.load(open(cg,'r'))
@@ -119,13 +121,31 @@ class ComputationalGraph(object):
         self.params = [param for layer in self.dropoutLayers
                        for param in layer.params]
         
-        # Clamp output to the output of the last layer of the graph
+        # Clamp output to the output of the last layer
         self.output = self.layers[-1].output
 
+        # Clamp dropout output to the output of the last dropout layer
         self.dropoutOutput = self.dropoutLayers[-1].output
         
         # The number of outputs is obtained from the output layer of the graph
         self.n_out  = self.schema['graph'][-1]['n_out']
+
+        
+        self._setUpCostFunctions(x,y)
+
+
+    def _setUpCostFunctions(self,x,y):
+
+        if self.type == 'classifier':
+
+            self.supervised_cost = nllCost(self.dropoutOutput,y)
+
+        elif self.type == 'regressor':
+
+            self.supervised_cost = sqerrCost(self.dropoutOutput,y)
+
+        self.unsupervised_cost = sqerrCost(self.dropoutOutput,x)
+
 
     def __str__(self):
 
@@ -138,11 +158,22 @@ class ComputationalGraph(object):
                               '(' + str(layer['n_out']) + ')')
 
         graphStr = ' '.join(graphList)
+
+        if self.type == 'classifier':
+            supCostStr = 'negative log-likelihood'
+        elif self.type == 'regressor':
+            supCostStr = 'squared error'
+        else:
+            supCostStr = 'None'
+
+        unsupCostStr = 'squared error'
             
         return ("Computational graph:\n" +
                 " - description : " + self.schema['description'] + '\n' +
                 " - type        : " + self.schema['type']        + '\n' +
-                " - graph layout: " + graphStr )
+                " - graph layout: " + graphStr                   + '\n' + 
+                " - cost(sup.)  : " + supCostStr                 + '\n' + 
+                " - cost(unsup.): " + unsupCostStr               + '\n' )
 
 
 

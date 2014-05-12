@@ -12,7 +12,7 @@ from cgml.trainers import OnlineTrainer
 from cgml.predictors import OnlinePredictor
 from cgml.argparse_actions import giveArgs
 from cgml.computational_graph import ComputationalGraph
-from cgml.costs import nllCost,sqerrCost
+#from cgml.costs import nllCost,sqerrCost
 
 # Print outputs here
 outStream = sys.stdout
@@ -42,7 +42,8 @@ x = T.dmatrix('x')
 y = T.lvector('y')
 
 # Create the model
-model = ComputationalGraph(input = x,
+model = ComputationalGraph(x = x,
+                           y = y,
                            cg    = args.cg,
                            log   = log)
 
@@ -53,9 +54,9 @@ if model.schema['type'] == 'classifier':
 
     infStream.write("Setting up the classifier:\n")
 
-    infStream.write("Setting up the cost function\n")
+    #infStream.write("Setting up the cost function\n")
 
-    cost = nllCost(model.dropoutOutput,y)
+    #cost = nllCost(model.dropoutOutput,y)
 
     infStream.write("Setting up the optimizer\n")
 
@@ -63,7 +64,7 @@ if model.schema['type'] == 'classifier':
     # NOTE: make selectable
     # NOTE: embed into OnlineTrainer
     msgd_optimizer = MSGD(
-        cost      = cost,
+        cost      = model.supervised_cost,
         params    = model.params,
         learnRate = args.learnRate)
     
@@ -73,16 +74,16 @@ if model.schema['type'] == 'classifier':
     oTrainer = OnlineTrainer(
         x = x,
         y = y,
-        cost = cost,
+        cost = model.supervised_cost,
         optimizer = msgd_optimizer)
 
 elif model.schema['type'] == 'autoencoder':
 
     infStream.write("Setting up the autoencoder:\n")
 
-    infStream.write("Setting up the cost function\n")
+    #infStream.write("Setting up the cost function\n")
 
-    cost = sqerrCost(x,model.dropoutOutput)
+    #cost = sqerrCost(x,model.dropoutOutput)
 
     infStream.write("Setting up the optimizer\n")
 
@@ -90,7 +91,7 @@ elif model.schema['type'] == 'autoencoder':
     # NOTE: make selectable
     # NOTE: embed into OnlineTrainer
     msgd_optimizer = MSGD(
-        cost      = cost,
+        cost      = model.unsupervised_cost,
         params    = model.params,
         learnRate = args.learnRate)
     
@@ -100,11 +101,11 @@ elif model.schema['type'] == 'autoencoder':
     oTrainer = OnlineTrainer(
         x = x,
         y = None,
-        cost = cost,
+        cost = model.unsupervised_cost,
         optimizer = msgd_optimizer)
     
 else:
-    raise Exception('Cost function unavailable for CG schema type: ' + model.schema['type'])
+    raise Exception('Cost function unavailable for CG schema type: ' + model.type)
 
 infStream.write("Setting up the predictor\n")
 
