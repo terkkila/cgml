@@ -3,16 +3,12 @@
 import sys
 import argparse
 import theano.tensor as T
-import theano
 import numpy as np
 
 from cgml.io import DataReader
-from cgml.optimizers import MSGD
-from cgml.trainers import OnlineTrainer
 from cgml.predictors import OnlinePredictor
 from cgml.argparse_actions import giveArgs
 from cgml.computational_graph import ComputationalGraph
-#from cgml.costs import nllCost,sqerrCost
 
 # Print outputs here
 outStream = sys.stdout
@@ -45,67 +41,11 @@ y = T.lvector('y')
 model = ComputationalGraph(x = x,
                            y = y,
                            cg    = args.cg,
-                           log   = log)
+                           log   = log,
+                           learnRate = args.learnRate)
 
 # Write description of the model to infStream
 infStream.write('\n' + str(model) + '\n\n')
-
-if model.schema['type'] == 'classifier':
-
-    infStream.write("Setting up the classifier:\n")
-
-    #infStream.write("Setting up the cost function\n")
-
-    #cost = nllCost(model.dropoutOutput,y)
-
-    infStream.write("Setting up the optimizer\n")
-
-    # Use mini-batch stochastic gradient descent to optimize parameters
-    # NOTE: make selectable
-    # NOTE: embed into OnlineTrainer
-    msgd_optimizer = MSGD(
-        cost      = model.supervised_cost,
-        params    = model.params,
-        learnRate = args.learnRate)
-    
-    infStream.write("Setting up the trainer\n")
-
-    # Create the online trainer
-    oTrainer = OnlineTrainer(
-        x = x,
-        y = y,
-        cost = model.supervised_cost,
-        optimizer = msgd_optimizer)
-
-elif model.schema['type'] == 'autoencoder':
-
-    infStream.write("Setting up the autoencoder:\n")
-
-    #infStream.write("Setting up the cost function\n")
-
-    #cost = sqerrCost(x,model.dropoutOutput)
-
-    infStream.write("Setting up the optimizer\n")
-
-    # Use mini-batch stochastic gradient descent to optimize parameters
-    # NOTE: make selectable
-    # NOTE: embed into OnlineTrainer
-    msgd_optimizer = MSGD(
-        cost      = model.unsupervised_cost,
-        params    = model.params,
-        learnRate = args.learnRate)
-    
-    infStream.write("Setting up the trainer\n")
-
-    # Create the online trainer
-    oTrainer = OnlineTrainer(
-        x = x,
-        y = None,
-        cost = model.unsupervised_cost,
-        optimizer = msgd_optimizer)
-    
-else:
-    raise Exception('Cost function unavailable for CG schema type: ' + model.type)
 
 infStream.write("Setting up the predictor\n")
 
@@ -116,6 +56,8 @@ oPredictor = OnlinePredictor(
 
 infStream.write('=> Done setting up the model!\n\n')
 infStream.write("Starting to read input data for training\n")
+
+costVec = []
 
 # Start training. Loops through the training data nPasses times
 for passIdx in xrange(args.nPasses):
@@ -128,17 +70,16 @@ for passIdx in xrange(args.nPasses):
             y_train,x_train = [vals[0][0]],[vals[0][1:]]
             if model.schema['type'] == 'classifier':
                 y_train = [np.int(yi) for yi in y_train]
-            oTrainer.update(x_train,y_train)
+            costVec.append( model.supervised_update(x_train,y_train) )
 
     else:
 
         for x_train in drTrain:
-            x_train_hat = oPredictor.predict(x_train)
-            oTrainer.update(x_train,None)
+            costVec.append( model.unsupervised_update(x_train) ) 
 
     infStream.write('Done with pass ' + str(passIdx) +
                     ', last known training cost is ' +
-                    str(oTrainer.costVec[-1]) + '\n')
+                    str(costVec[-1]) + '\n')
         
     # After each successful pass, rewind the data reader for training
     drTrain.rewind()

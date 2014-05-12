@@ -1,9 +1,11 @@
 
 import numpy as np
+import theano
 import theano.tensor as T
 from cgml.activations import linrect
 from cgml.layers import Layer,DropoutLayer
 from cgml.costs import nllCost,sqerrCost
+from cgml.optimizers import MSGD
 import yaml
 
 allowedGraphs = ['classifier','regressor','autoencoder','reinforcement-learner']
@@ -95,7 +97,8 @@ class ComputationalGraph(object):
                  x = None,
                  y = None,
                  cg    = None,
-                 log   = None):
+                 log   = None,
+                 learnRate = None):
 
         # Take symbolic representation of the input data
         self.input = x
@@ -133,18 +136,46 @@ class ComputationalGraph(object):
         
         self._setUpCostFunctions(x,y)
 
+        self._setUpOptimizers(x,y,learnRate)
 
     def _setUpCostFunctions(self,x,y):
 
+        self.unsupervised_cost = None
+        self.supervised_cost = None
+
         if self.type == 'classifier':
-
             self.supervised_cost = nllCost(self.dropoutOutput,y)
-
         elif self.type == 'regressor':
-
             self.supervised_cost = sqerrCost(self.dropoutOutput,y)
 
         self.unsupervised_cost = sqerrCost(self.dropoutOutput,x)
+
+    
+    def _setUpOptimizers(self,x,y,learnRate):
+
+        if self.supervised_cost:
+            
+            self.supervised_optimizer = MSGD(
+                cost      = self.supervised_cost,
+                params    = self.params,
+                learnRate = learnRate)
+            
+            self.supervised_update = theano.function(
+                inputs  = [x,y],
+                outputs = self.supervised_cost,
+                updates = self.supervised_optimizer.updates)
+            
+        if self.unsupervised_cost:
+            
+            self.unsupervised_optimizer = MSGD(
+                cost      = self.unsupervised_cost,
+                params    = self.params,
+                learnRate = learnRate)
+            
+            self.unsupervised_update = theano.function(
+                inputs  = [x],
+                outputs = self.unsupervised_cost,
+                updates = self.unsupervised_optimizer.updates)
 
 
     def __str__(self):
