@@ -22,10 +22,12 @@ args = giveArgs(log = infStream)
 log = ( open(args.log,'w') if args.log else None )
 
 # Data reader for training
-drTrain = DataReader(args.trainData)
+drTrain = DataReader(args.trainData,
+                     batchSize = args.batchSize)
 
 # Data reader for prediction
-drTest  = DataReader(args.testData)
+drTest  = DataReader(args.testData,
+                     batchSize = 1)
 
 # How many input attributes
 n_in = drTrain.nCols
@@ -55,17 +57,22 @@ for passIdx in xrange(args.nPasses):
     
     infStream.write("Starting training pass " + str(passIdx) + "\n")
 
-    if model.schema['type'] != 'autoencoder':
+    if model.type != 'autoencoder':
         
         for vals in drTrain:
-            y_train,x_train = [vals[0][0]],[vals[0][1:]]
+
+            y_train = vals.take(0,axis=1)
+            x_train = vals.take(xrange(1,vals.shape[1]),axis=1)
+
             if model.schema['type'] == 'classifier':
-                y_train = [np.int(yi) for yi in y_train]
+                y_train = np.asarray([np.int(yi) for yi in y_train])
+
             costVec.append( model.supervised_update(x_train,y_train) )
 
     else:
 
         for x_train in drTrain:
+
             costVec.append( model.unsupervised_update(x_train) ) 
 
     infStream.write('Done with pass ' + str(passIdx) +

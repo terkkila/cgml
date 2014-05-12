@@ -42,6 +42,14 @@ def giveArgs(log = None):
         required = False)
 
     parser.add_argument(
+        '--batchSize',
+        help = 'Number of samples per mini-batch',
+        type = int,
+        dest = 'batchSize',
+        default = 1,
+        required = False)
+    
+    parser.add_argument(
         '--log',
         help = 'Provide log file',
         type = str,
@@ -57,6 +65,7 @@ def giveArgs(log = None):
         log.write(' --trainData ' + args.trainData       + '\n')
         log.write(' --testData  ' + args.testData        + '\n')
         log.write(' --learnRate ' + str(args.learnRate)  + '\n')
+        log.write(' --batchSize ' + str(args.batchSize)  + '\n')
         log.write(' --nPasses   ' + str(args.nPasses)    + '\n')
         log.write(' --log       ' + str(args.log)        + '\n')
         

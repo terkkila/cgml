@@ -12,9 +12,16 @@ def readData(fileName):
     
 class DataReader(object):
 
-    def __init__(self,fileName):
+    def __init__(self,
+                 fileName, 
+                 batchSize = 1):
+
+        self.batchSize = batchSize
+
         self.f = open(fileName,'r')
+
         self.nCols = len(self.f.readline().rstrip().split('\t'))
+
         self.f.seek(0)
 
     def __iter__(self):
@@ -22,13 +29,22 @@ class DataReader(object):
 
     def next(self):
 
-        try:
-            
-            return np.asarray(map(float,self.f.readline().rstrip().split('\t')), 
-                              dtype = float).reshape((1,self.nCols))
-            
-        except:
+        lines = []
+        nLinesRead = 0
+
+        for line in self.f:
+            lines.append( line.rstrip() )
+            nLinesRead += 1
+            if nLinesRead == self.batchSize:
+                break
+
+        if nLinesRead == 0:
             raise StopIteration
+
+        
+        return np.asarray([map(float,line.split('\t')) for line in lines],
+                          dtype = float)
+
 
     def rewind(self):
         self.f.seek(0)
