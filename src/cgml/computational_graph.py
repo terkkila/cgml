@@ -133,10 +133,12 @@ class ComputationalGraph(object):
         # The number of outputs is obtained from the output layer of the graph
         self.n_out  = self.schema['graph'][-1]['n_out']
 
-        
         self._setUpCostFunctions(x,y)
 
         self._setUpOptimizers(x,y,learnRate)
+
+        self._setUpOutputs(x)
+
 
     def _setUpCostFunctions(self,x,y):
 
@@ -178,6 +180,37 @@ class ComputationalGraph(object):
                 updates = self.unsupervised_optimizer.updates)
 
 
+    def _setUpOutputs(self,x):
+        
+        self.encode = None
+        self.predict = None
+
+        if self.type == 'classifier':
+        
+            self.predict = theano.function( inputs = [x],
+                                            outputs = T.argmax(self.output,
+                                                               axis = 1) )
+
+        elif self.type == 'regressor':
+                    
+            self.predict = theano.function( inputs = [x],
+                                            outputs = self.output )
+
+        elif self.type == 'autoencoder':
+
+            self.predict = theano.function( inputs = [x],
+                                            outputs = self.output )
+
+            
+            self.encode = theano.function( inputs = [x],
+                                           outputs = self.layers[self.encodeLayerIdx()].output )
+
+
+    def encodeLayerIdx(self):
+        assert self.type == 'autoencoder'
+        return len(self.layers) / 2 - 1
+
+
     def __str__(self):
 
         graphList = ['input(' + str(self.schema['graph'][0]['n_in']) + ')']
@@ -191,13 +224,13 @@ class ComputationalGraph(object):
         graphStr = ' '.join(graphList)
 
         if self.type == 'classifier':
-            supCostStr = 'negative log-likelihood'
+            supCostStr = 'Negative log-likelihood'
         elif self.type == 'regressor':
-            supCostStr = 'squared error'
+            supCostStr = 'Squared error'
         else:
             supCostStr = 'None'
 
-        unsupCostStr = 'squared error'
+        unsupCostStr = 'Squared error'
             
         return ("Computational graph:\n" +
                 " - description : " + self.schema['description'] + '\n' +

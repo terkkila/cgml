@@ -6,7 +6,6 @@ import theano.tensor as T
 import numpy as np
 
 from cgml.io import DataReader
-from cgml.predictors import OnlinePredictor
 from cgml.argparse_actions import giveArgs
 from cgml.computational_graph import ComputationalGraph
 
@@ -47,14 +46,6 @@ model = ComputationalGraph(x = x,
 # Write description of the model to infStream
 infStream.write('\n' + str(model) + '\n\n')
 
-infStream.write("Setting up the predictor\n")
-
-# Create the online predictor
-oPredictor = OnlinePredictor(
-    x = x,
-    model = model)
-
-infStream.write('=> Done setting up the model!\n\n')
 infStream.write("Starting to read input data for training\n")
 
 costVec = []
@@ -98,18 +89,18 @@ for vals in drTest:
 
         y_test = np.asarray([np.int(yi) for yi in vals.take(0,axis=1)])
         x_test = vals.take(xrange(1,vals.shape[1]),axis=1)
-        outStream.write( strMat(zip(y_test,oPredictor.predict(x_test))) + '\n' )
+        outStream.write( strMat(zip(y_test,model.predict(x_test))) + '\n' )
 
     elif model.type == 'regressor':
 
         y_test = vals.take(0,axis=1)
         x_test = vals.take(xrange(1,vals.shape[1]),axis=1)
-        outStream.write( strMat(zip(y_test,oPredictor.predict(x_test))) + '\n' )
+        outStream.write( strMat(zip(y_test,model.predict(x_test))) + '\n' )
 
-    elif model.schema['type'] == 'autoencoder':
+    elif model.type == 'autoencoder':
 
         x_test = vals
-        outStream.write( strMat(oPredictor.encode(x_test)) + '\n' )
+        outStream.write( strMat(model.encode(x_test)) + '\n' )
 
         
     
