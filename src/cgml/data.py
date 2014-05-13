@@ -77,9 +77,19 @@ def makeSharedBiasVector(rng        = None,
                          activation = None,
                          randomInit = True):
     
+
+    if randomInit:
+
+        b_values = np.asarray(rng.uniform(low = -1,
+                                          high = 1,
+                                          size = (n_out,)),
+                              dtype = theano.config.floatX)
     
+    else:
+
+        b_values = np.zeros((n_out,), dtype = theano.config.floatX)
+
     # ... and make b shared theano variable
-    b_values = np.zeros((n_out,), dtype = theano.config.floatX)
     b = theano.shared(value = b_values, name='b')
 
     return b

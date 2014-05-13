@@ -37,9 +37,8 @@ class Layer(object):
                                         n_in = n_in,
                                         n_out = n_out,
                                         activation = self.activation,
-                                        randomInit = randomInit)
+                                        randomInit = False)
                    if not b else b )
-
 
         # If activation function is defined, use it,
         # otherwise assign linear activation
@@ -50,10 +49,13 @@ class Layer(object):
             
         self.params = [self.W,self.b]
 
+        self.weights = theano.function( inputs = [],
+                                        outputs = (self.W,self.b) )
         
-def _dropout_from_layer_input(rng   = None,
-                              input = None,
-                              p     = None):
+        
+def _dropout_from_layer_input(input = None,
+                              p     = None,
+                              rng   = None):
     """p is the probablity of dropping a unit
     """
     srng = theano.tensor.shared_randomstreams.RandomStreams(rng.randint(999999))

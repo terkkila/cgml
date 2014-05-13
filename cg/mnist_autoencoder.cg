@@ -1,0 +1,29 @@
+description: MNIST digit autoencoder
+
+type: autoencoder
+
+randomInit: True
+
+graph:
+
+ - activation: sigmoid
+   n_in:       784
+   n_out:      100
+   dropout:    0.0
+
+ - activation: sigmoid
+   n_in:       100
+   n_out:      2
+   dropout:    0.0
+
+ - activation: sigmoid
+   n_in:       2
+   n_out:      100
+   dropout:    0.0
+
+ - activation: sigmoid
+   n_in:       100
+   n_out:      784
+   dropout:    0.0
+
+

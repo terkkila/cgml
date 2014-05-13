@@ -4,7 +4,7 @@ import theano
 import theano.tensor as T
 from cgml.activations import linrect
 from cgml.layers import Layer,DropoutLayer
-from cgml.costs import nllCost,sqerrCost
+from cgml.costs import nllCost,sqerrCost,crossEntCost
 from cgml.optimizers import MSGD
 import yaml
 
@@ -16,9 +16,7 @@ activationMap = {'linear':  None,
                  'softmax': T.nnet.softmax,
                  'linrect': linrect}
 
-def parseLayers(x,schema):
-
-    rng = np.random.RandomState(1234)
+def parseLayers(x,schema,rng):
 
     assert schema['type'] in allowedGraphs
 
@@ -98,7 +96,14 @@ class ComputationalGraph(object):
                  y = None,
                  cg    = None,
                  log   = None,
-                 learnRate = None):
+                 learnRate = None,
+                 L1Reg = 0.0,
+                 L2Reg = 0.0,
+                 seed = None):
+
+        self.seed = seed
+
+        self.rng = np.random.RandomState(self.seed)
 
         # Take symbolic representation of the input data
         self.input = x
@@ -115,7 +120,9 @@ class ComputationalGraph(object):
 
         # Parse layers from the schema. Input is needed to clamp
         # it with the first layer
-        self.layers,self.dropoutLayers = parseLayers(self.input,self.schema)
+        self.layers,self.dropoutLayers = parseLayers(self.input,
+                                                     self.schema,
+                                                     self.rng)
 
         # Take number of input variables
         self.n_in = self.layers[0].n_in
@@ -133,24 +140,29 @@ class ComputationalGraph(object):
         # The number of outputs is obtained from the output layer of the graph
         self.n_out  = self.schema['graph'][-1]['n_out']
 
-        self._setUpCostFunctions(x,y)
+        self._setUpCostFunctions(x,y,L1Reg,L2Reg)
 
         self._setUpOptimizers(x,y,learnRate)
 
         self._setUpOutputs(x)
 
 
-    def _setUpCostFunctions(self,x,y):
+    def _setUpCostFunctions(self,x,y,L1Reg,L2Reg):
+        
+        self.L1norm = T.sum([T.sum(abs(layer.W.flatten())) for layer in self.layers])
+        self.L2norm = T.sum([T.sum(layer.W.flatten() ** 2) for layer in self.layers])
+        
+        self.reg = L1Reg * self.L1norm + L2Reg * self.L2norm
 
         self.unsupervised_cost = None
         self.supervised_cost = None
-
+        
         if self.type == 'classifier':
-            self.supervised_cost = nllCost(self.dropoutOutput,y)
+            self.supervised_cost = nllCost(self.dropoutOutput,y) + self.reg
         elif self.type == 'regressor':
-            self.supervised_cost = sqerrCost(self.dropoutOutput,y)
-
-        self.unsupervised_cost = sqerrCost(self.dropoutOutput,x)
+            self.supervised_cost = crossEntCost(self.dropoutOutput,y) + self.reg
+            
+        self.unsupervised_cost = sqerrCost(self.dropoutOutput,x) + self.reg
 
     
     def _setUpOptimizers(self,x,y,learnRate):
@@ -210,7 +222,6 @@ class ComputationalGraph(object):
         assert self.type == 'autoencoder'
         return len(self.layers) / 2 - 1
 
-
     def __str__(self):
 
         graphList = ['input(' + str(self.schema['graph'][0]['n_in']) + ')']
@@ -230,7 +241,7 @@ class ComputationalGraph(object):
         else:
             supCostStr = 'None'
 
-        unsupCostStr = 'Squared error'
+        unsupCostStr = 'Cross-entropy'
             
         return ("Computational graph:\n" +
                 " - description : " + self.schema['description'] + '\n' +
@@ -238,9 +249,6 @@ class ComputationalGraph(object):
                 " - graph layout: " + graphStr                   + '\n' + 
                 " - cost(sup.)  : " + supCostStr                 + '\n' + 
                 " - cost(unsup.): " + unsupCostStr               + '\n' )
-
-
-
 
 
 

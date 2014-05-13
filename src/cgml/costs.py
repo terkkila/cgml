@@ -20,4 +20,9 @@ def sqerrCost(yhat, y):
     e = y - yhat
 
     # Squared error
-    return( T.sum(T.dot(e,e.T)) )
+    return( T.mean(T.dot(e,e.T)) )
+
+
+def crossEntCost(yhat,y):
+    return T.mean(-T.sum(y * T.log(yhat) + (1 - y) * T.log(1 - yhat), axis=1))
+
