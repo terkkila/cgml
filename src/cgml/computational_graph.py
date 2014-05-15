@@ -95,6 +95,7 @@ class ComputationalGraph(object):
                  schema = None,
                  log   = None,
                  learnRate = None,
+                 momentum = None,
                  L1Reg = 0.0,
                  L2Reg = 0.0,
                  seed = None):
@@ -140,9 +141,11 @@ class ComputationalGraph(object):
 
         self._setUpCostFunctions(x,y,L1Reg,L2Reg)
 
-        self._setUpOptimizers(x,y,learnRate)
+        self._setUpOptimizers(x,y,learnRate,momentum)
 
         self._setUpOutputs(x)
+
+        self.optimizer = theano.opt.Optimizer()
 
 
     def _setUpCostFunctions(self,x,y,L1Reg,L2Reg):
@@ -163,14 +166,15 @@ class ComputationalGraph(object):
         self.unsupervised_cost = sqerrCost(self.dropoutOutput,x) + self.reg
 
     
-    def _setUpOptimizers(self,x,y,learnRate):
+    def _setUpOptimizers(self,x,y,learnRate,momentum):
 
         if self.supervised_cost:
             
             self.supervised_optimizer = MSGD(
                 cost      = self.supervised_cost,
                 params    = self.params,
-                learnRate = learnRate)
+                learnRate = learnRate,
+                momentum  = momentum)
             
             self.supervised_update = theano.function(
                 inputs  = [x,y],
@@ -182,7 +186,8 @@ class ComputationalGraph(object):
             self.unsupervised_optimizer = MSGD(
                 cost      = self.unsupervised_cost,
                 params    = self.params,
-                learnRate = learnRate)
+                learnRate = learnRate,
+                momentum  = momentum)
             
             self.unsupervised_update = theano.function(
                 inputs  = [x],

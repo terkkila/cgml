@@ -45,6 +45,7 @@ elif args.cg:
                                schema = yaml.load(open(args.cg,'r')),
                                log   = log,
                                learnRate = args.learnRate,
+                               momentum  = args.momentum,
                                L1Reg = args.L1Reg,
                                L2Reg = args.L2Reg,
                                seed = args.seed)
@@ -98,6 +99,15 @@ if args.trainData:
 
 infStream.write('\n')
 
+if args.save:
+    
+    infStream.write('Saving model to file: ' + args.save + '\n')
+
+    f = open(args.save,'wb')
+    
+    cPickle.dump(model,f,protocol=cPickle.HIGHEST_PROTOCOL)
+
+
 def strVec(vec):
     if type(vec) in [np.int64,int,np.float64,float]:
         return str(vec)
@@ -127,13 +137,6 @@ if args.testData:
             outStream.write( strMat(zip(y_test,model.encode(x_test))) + '\n' )
 
 
-if args.save:
-    
-    infStream.write('Saving model to file: ' + args.save + '\n')
-
-    f = open(args.save,'wb')
-    
-    cPickle.dump(model,f,protocol=cPickle.HIGHEST_PROTOCOL)
 
 
 

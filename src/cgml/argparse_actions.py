@@ -47,6 +47,14 @@ def giveArgs(log = None):
         required = False)
 
     parser.add_argument(
+        '--momentum',
+        help = 'How much previous gradient update affects the current one',
+        type = float,
+        dest = 'momentum',
+        default = 0.0,
+        required = False)
+
+    parser.add_argument(
         '--L1Reg',
         help = 'L1 Regularization term',
         type = float,
@@ -108,6 +116,7 @@ def giveArgs(log = None):
         log.write(' --trainData ' + str(args.trainData)  + '\n')
         log.write(' --testData  ' + str(args.testData)   + '\n')
         log.write(' --learnRate ' + str(args.learnRate)  + '\n')
+        log.write(' --momentum  ' + str(args.momentum)   + '\n')
         log.write(' --L1Reg     ' + str(args.L1Reg)      + '\n')
         log.write(' --L2Reg     ' + str(args.L2Reg)      + '\n')
         log.write(' --batchSize ' + str(args.batchSize)  + '\n')
