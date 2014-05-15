@@ -24,21 +24,25 @@ class Layer(object):
 
 
         # Create W if not given
-        self.W = ( makeSharedWeightMatrix(rng = rng,
+        if not W:
+            self.W = makeSharedWeightMatrix(rng = rng,
+                                            n_in = n_in,
+                                            n_out = n_out,
+                                            activation = self.activation,
+                                            randomInit = randomInit)
+        else:
+            self.W = W
+        
+            
+        # Create b if not given
+        if not b:
+            self.b = makeSharedBiasVector(rng = rng,
                                           n_in = n_in,
                                           n_out = n_out,
                                           activation = self.activation,
-                                          randomInit = randomInit)
-                   if not W else W )
-
-
-        # Create b if not given
-        self.b = ( makeSharedBiasVector(rng = rng,
-                                        n_in = n_in,
-                                        n_out = n_out,
-                                        activation = self.activation,
-                                        randomInit = False)
-                   if not b else b )
+                                          randomInit = False)
+        else:
+            self.b = b
 
         # If activation function is defined, use it,
         # otherwise assign linear activation

@@ -6,7 +6,6 @@ from cgml.activations import linrect
 from cgml.layers import Layer,DropoutLayer
 from cgml.costs import nllCost,sqerrCost,crossEntCost
 from cgml.optimizers import MSGD
-import yaml
 
 allowedGraphs = ['classifier','regressor','autoencoder','reinforcement-learner']
 
@@ -62,7 +61,6 @@ def parseLayers(x,schema,rng):
         lastOutput = dropoutLayers[-1].output
         lastNOut   = dropoutLayers[-1].n_out
 
-
     lastOutput = x
     lastNOut = schemaLayers[0]['n_in']
 
@@ -94,7 +92,7 @@ class ComputationalGraph(object):
     def __init__(self,
                  x = None,
                  y = None,
-                 cg    = None,
+                 schema = None,
                  log   = None,
                  learnRate = None,
                  L1Reg = 0.0,
@@ -108,8 +106,8 @@ class ComputationalGraph(object):
         # Take symbolic representation of the input data
         self.input = x
 
-        # Load schema from input file
-        self.schema = yaml.load(open(cg,'r'))
+        # Schema to build the model from
+        self.schema = schema
 
         if log:
             log.write('Loaded the following schema: ' +
@@ -160,7 +158,7 @@ class ComputationalGraph(object):
         if self.type == 'classifier':
             self.supervised_cost = nllCost(self.dropoutOutput,y) + self.reg
         elif self.type == 'regressor':
-            self.supervised_cost = crossEntCost(self.dropoutOutput,y) + self.reg
+            self.supervised_cost = sqerrCost(self.dropoutOutput,y) + self.reg
             
         self.unsupervised_cost = sqerrCost(self.dropoutOutput,x) + self.reg
 
@@ -241,7 +239,7 @@ class ComputationalGraph(object):
         else:
             supCostStr = 'None'
 
-        unsupCostStr = 'Cross-entropy'
+        unsupCostStr = 'Squared error'
             
         return ("Computational graph:\n" +
                 " - description : " + self.schema['description'] + '\n' +

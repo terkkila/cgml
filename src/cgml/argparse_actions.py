@@ -20,7 +20,7 @@ def giveArgs(log = None):
         type = str,
         dest     = 'cg',
         default  = None,
-        required = True)
+        required = False)
     
     parser.add_argument(
         '--trainData',
@@ -28,7 +28,7 @@ def giveArgs(log = None):
         type = str,
         dest     = 'trainData',
         default  = None,
-        required = True)
+        required = False)
 
     parser.add_argument(
         '--testData',
@@ -116,7 +116,22 @@ def giveArgs(log = None):
         log.write(' --save      ' + str(args.save)       + '\n')
         log.write(' --load      ' + str(args.load)       + '\n')
 
+    if not args.cg and not args.load:
+        raise Exception("You must provide either a Computational Graph schema file (--cg) " + 
+                        "or model to load (--load)")
         
+    if args.cg and args.load:
+        raise Exception("Cannot provide both Computational Graph schema file (--cg) " + 
+                        "and model to load (--load)")
+
+    if args.cg and not args.trainData:
+        raise Exception("Computational Graph schema file provided, " + 
+                        "but no input data for training (--trainData)")
+
+    if args.load and not args.trainData and not args.testData:
+        raise Exception("Model file to load provided, " + 
+                        "but no data for training (--trainData) or prediction (--testData)")
+
     return args
 
 

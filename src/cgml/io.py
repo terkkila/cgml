@@ -14,7 +14,8 @@ class DataReader(object):
 
     def __init__(self,
                  fileName, 
-                 batchSize = 1):
+                 batchSize = 1,
+                 targetType = np.float):
 
         self.batchSize = batchSize
 
@@ -24,27 +25,49 @@ class DataReader(object):
 
         self.f.seek(0)
 
+        self.targetType = targetType
+
     def __iter__(self):
         return self
 
-    def next(self):
+
+    def readBatch(self,batchSize):
 
         lines = []
-        nLinesRead = 0
 
         for line in self.f:
             lines.append( line.rstrip() )
-            nLinesRead += 1
-            if nLinesRead == self.batchSize:
+            if len(lines) == batchSize:
                 break
 
-        if nLinesRead == 0:
+        return lines
+
+
+    def parseBatch(self,lines):
+
+        arr =  np.asarray([map(float,line.split('\t')) for line in lines],
+                          dtype = float)
+        
+        y = np.asarray(arr.take(0,axis=1),dtype=self.targetType)
+        x = arr.take(xrange(1,arr.shape[1]),axis=1)
+
+        return x,y
+
+
+    def next(self):
+
+        lines = self.readBatch(self.batchSize)
+
+        if len(lines) == 0:
             raise StopIteration
 
-        
-        return np.asarray([map(float,line.split('\t')) for line in lines],
-                          dtype = float)
+        x,y = self.parseBatch(lines)
 
+        return x,y
+
+    def cache(self):
+        self.rewind()
+        return self.parseBatch(self.readBatch(-1))
 
     def rewind(self):
         self.f.seek(0)

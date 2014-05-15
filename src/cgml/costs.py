@@ -1,6 +1,6 @@
 
 import theano.tensor as T
-
+import numpy as np
 
 def nllCost(yhat, y):
     """Calculates the negative log-likelihood between
@@ -20,7 +20,7 @@ def sqerrCost(yhat, y):
     e = y - yhat
 
     # Squared error
-    return( T.mean(T.dot(e,e.T)) )
+    return( T.mean(T.diagonal(T.dot(e,e.T))) )
 
 
 def crossEntCost(yhat,y):

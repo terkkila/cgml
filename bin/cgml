@@ -5,6 +5,7 @@ import argparse
 import theano.tensor as T
 import numpy as np
 import cPickle
+import yaml
 
 from cgml.io import DataReader
 from cgml.argparse_actions import giveArgs
@@ -36,18 +37,22 @@ if args.load:
     f = open(args.load,'rb')
     model = cPickle.load(f)
 
-else:
+elif args.cg:
 
     # Create the model
     model = ComputationalGraph(x = x,
                                y = y,
-                               cg    = args.cg,
+                               schema = yaml.load(open(args.cg,'r')),
                                log   = log,
                                learnRate = args.learnRate,
                                L1Reg = args.L1Reg,
                                L2Reg = args.L2Reg,
                                seed = args.seed)
-    
+
+if model.type == 'classifier':
+    targetType = np.int
+else:
+    targetType = np.float
 
 # Write description of the model to infStream
 infStream.write('\n' + str(model) + '\n\n')
@@ -58,7 +63,8 @@ if args.trainData:
 
     # Data reader for training
     drTrain = DataReader(args.trainData,
-                         batchSize = args.batchSize)
+                         batchSize = args.batchSize,
+                         targetType = targetType)
     
     nBatches = 0
 
@@ -67,63 +73,38 @@ if args.trainData:
     # Start training. Loops through the training data nPasses times
     for passIdx in xrange(args.nPasses):
         
-        if model.type != 'autoencoder':
+        currMeanCost = 0.0
         
-            currMeanCost = 0.0
-
-            n = 0
-
-            for vals in drTrain:
-
-                nBatches += 1
-                n += 1 
-
-                y_train = vals.take(0,axis=1)
-                x_train = vals.take(xrange(1,vals.shape[1]),axis=1)
-
-                if model.schema['type'] == 'classifier':
-                    y_train = np.asarray([np.int(yi) for yi in y_train])
-                    
+        n = 0
+        
+        for x_train,y_train in drTrain:
+            
+            nBatches += 1
+            n += 1 
+            
+            if model.type != 'autoencoder':
                 currMeanCost += model.supervised_update(x_train,y_train) / n
-
-                if n % nTh == 0:
-                    infStream.write('Pass ' + str(passIdx) + ', batch ' + 
-                                    str(nBatches) + ', avg.cost ' + str(currMeanCost) + '\n')
-                    n = 0
-                    currMeanCost = 0.0
-
-        else:
-
-            currMeanCost = 0.0
-            n = 0
-
-            for x_train in drTrain:
-
-                nBatches += 1
-                n += 1
-
+            else:
                 currMeanCost += model.unsupervised_update(x_train) / n
 
-                if n % nTh == 0:
-                    infStream.write('Pass ' + str(passIdx) + ', batch ' + 
-                                    str(nBatches) + ', avg.cost ' + str(currMeanCost) + '\n')
-                    n = 0
-                    currMeanCost = 0.0
+            if n % nTh == 0:
+                infStream.write('Pass ' + str(passIdx) + ', batch ' + 
+                                str(nBatches) + ', avg.cost ' + str(currMeanCost) + '\n')
+                n = 0
+                currMeanCost = 0.0
 
-        infStream.write('Done with pass ' + str(passIdx) + ':\n')
-
-        for i in xrange(len(model.layers)):
-            W,b = model.layers[i].weights()
-            infStream.write(' Layer ' + str(i) + ' mean(W): ' + str(np.mean(W.flatten())) + '\n')
-            infStream.write(' Layer ' + str(i) + ' mean(b): ' + str(np.mean(b.flatten())) + '\n')
-        
         # After each successful pass, rewind the data reader for training
         drTrain.rewind()
 
 infStream.write('\n')
 
+def strVec(vec):
+    if type(vec) in [np.int64,int,np.float64,float]:
+        return str(vec)
+    return ' '.join(map(str,vec))
+
 def strMat(mat):
-    return '\n'.join(' '.join(map(str,row)) for row in mat)
+    return '\n'.join(strVec(map(strVec,row)) for row in mat)
     
 if args.testData:
 
@@ -131,27 +112,19 @@ if args.testData:
     
     # Data reader for prediction
     drTest  = DataReader(args.testData,
-                         batchSize = 1)
+                         batchSize = 1,
+                         targetType = targetType)
     
     # Start prediction
-    for vals in drTest:
+    for x_test,y_test in drTest:
 
-        if model.type == 'classifier':
+        if model.type in ['classifier','regressor']:
             
-            y_test = np.asarray([np.int(yi) for yi in vals.take(0,axis=1)])
-            x_test = vals.take(xrange(1,vals.shape[1]),axis=1)
-            outStream.write( strMat(zip(y_test,model.predict(x_test))) + '\n' )
-            
-        elif model.type == 'regressor':
-            
-            y_test = vals.take(0,axis=1)
-            x_test = vals.take(xrange(1,vals.shape[1]),axis=1)
             outStream.write( strMat(zip(y_test,model.predict(x_test))) + '\n' )
             
         elif model.type == 'autoencoder':
             
-            x_test = vals
-            outStream.write( strMat(model.encode(x_test)) + '\n' )
+            outStream.write( strMat(zip(y_test,model.encode(x_test))) + '\n' )
 
 
 if args.save:
