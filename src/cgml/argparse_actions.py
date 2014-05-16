@@ -31,6 +31,14 @@ def giveArgs(log = None):
         required = False)
 
     parser.add_argument(
+        '--validData',
+        help     = 'Data for validation',
+        type = str,
+        dest     = 'validData',
+        default  = None,
+        required = False)
+    
+    parser.add_argument(
         '--testData',
         help     = 'Data for testing',
         type = str,
@@ -114,6 +122,7 @@ def giveArgs(log = None):
         log.write(' --seed      ' + str(args.seed)       + '\n')
         log.write(' --cg        ' + str(args.cg)         + '\n')
         log.write(' --trainData ' + str(args.trainData)  + '\n')
+        log.write(' --validData ' + str(args.validData)  + '\n')
         log.write(' --testData  ' + str(args.testData)   + '\n')
         log.write(' --learnRate ' + str(args.learnRate)  + '\n')
         log.write(' --momentum  ' + str(args.momentum)   + '\n')

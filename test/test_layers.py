@@ -20,9 +20,6 @@ def test_layers():
 
     rng = np.random.RandomState(0)
 
-    x = T.dmatrix('x')
-    y = T.lvector('y')
-    
     schema = {'description':'test CG',
               'type': 'classifier',
               'randomInit':True,
@@ -35,11 +32,10 @@ def test_layers():
                     'n_in':10,
                     'n_out':3,
                     'dropout':0.0}]}
-    
+     
     model = ComputationalGraph(schema = schema,
-                               x = x,
-                               y = y,
                                learnRate = 0.01,
+                               momentum = 0.0,
                                seed = 0)
 
     assertModelWeightsMatch(model)

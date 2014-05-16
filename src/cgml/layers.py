@@ -55,7 +55,12 @@ class Layer(object):
 
         self.weights = theano.function( inputs = [],
                                         outputs = (self.W,self.b) )
-        
+
+class ConvolutionLayer(Layer):
+
+    def __init__(self):
+        return
+
         
 def _dropout_from_layer_input(input = None,
                               p     = None,

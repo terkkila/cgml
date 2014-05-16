@@ -2,18 +2,10 @@
 import numpy as np
 import theano
 import theano.tensor as T
-from cgml.activations import linrect
 from cgml.layers import Layer,DropoutLayer
 from cgml.costs import nllCost,sqerrCost,crossEntCost
 from cgml.optimizers import MSGD
-
-allowedGraphs = ['classifier','regressor','autoencoder','reinforcement-learner']
-
-activationMap = {'linear':  None,
-                 'sigmoid': T.nnet.sigmoid,
-                 'tanh':    T.tanh,
-                 'softmax': T.nnet.softmax,
-                 'linrect': linrect}
+from cgml.schema import validateSchema,allowedGraphs,activationMap
 
 def parseLayers(x,schema,rng):
 
@@ -90,8 +82,6 @@ def percent(x):
 class ComputationalGraph(object):
 
     def __init__(self,
-                 x = None,
-                 y = None,
                  schema = None,
                  log   = None,
                  learnRate = None,
@@ -99,6 +89,15 @@ class ComputationalGraph(object):
                  L1Reg = 0.0,
                  L2Reg = 0.0,
                  seed = None):
+
+        # Run schema validator before we do anything
+        validateSchema(schema)
+
+        # Symbolic input matrix
+        x = T.dmatrix('x')
+        
+        # Symbolic output vector
+        y = T.lvector('y')
 
         self.seed = seed
 
@@ -155,45 +154,53 @@ class ComputationalGraph(object):
         
         self.reg = L1Reg * self.L1norm + L2Reg * self.L2norm
 
-        self.unsupervised_cost = None
-        self.supervised_cost = None
+        self._unsupervised_cost = None
+        self._supervised_cost = None
         
         if self.type == 'classifier':
-            self.supervised_cost = nllCost(self.dropoutOutput,y) + self.reg
+            self._supervised_cost = nllCost(self.dropoutOutput,y) + self.reg
         elif self.type == 'regressor':
-            self.supervised_cost = sqerrCost(self.dropoutOutput,y) + self.reg
+            self._supervised_cost = sqerrCost(self.dropoutOutput,y) + self.reg
             
-        self.unsupervised_cost = sqerrCost(self.dropoutOutput,x) + self.reg
+        self._unsupervised_cost = sqerrCost(self.dropoutOutput,x) + self.reg
 
     
     def _setUpOptimizers(self,x,y,learnRate,momentum):
 
-        if self.supervised_cost:
+        if self._supervised_cost:
             
             self.supervised_optimizer = MSGD(
-                cost      = self.supervised_cost,
+                cost      = self._supervised_cost,
                 params    = self.params,
                 learnRate = learnRate,
                 momentum  = momentum)
             
             self.supervised_update = theano.function(
                 inputs  = [x,y],
-                outputs = self.supervised_cost,
+                outputs = self._supervised_cost,
                 updates = self.supervised_optimizer.updates)
             
-        if self.unsupervised_cost:
+            self.supervised_cost = theano.function(
+                inputs  = [x,y],
+                outputs = self._supervised_cost)
+
+        if self._unsupervised_cost:
             
             self.unsupervised_optimizer = MSGD(
-                cost      = self.unsupervised_cost,
+                cost      = self._unsupervised_cost,
                 params    = self.params,
                 learnRate = learnRate,
                 momentum  = momentum)
             
             self.unsupervised_update = theano.function(
                 inputs  = [x],
-                outputs = self.unsupervised_cost,
+                outputs = self._unsupervised_cost,
                 updates = self.unsupervised_optimizer.updates)
 
+            self.unsupervised_cost = theano.function(
+                inputs  = [x],
+                outputs = self._unsupervised_cost)
+        
 
     def _setUpOutputs(self,x):
         

@@ -23,12 +23,6 @@ args = giveArgs(log = infStream)
 # Open a log if needed
 log = ( open(args.log,'w') if args.log else None )
 
-# Symbolic input matrix
-x = T.dmatrix('x')
-
-# Symbolic output vector
-y = T.lvector('y')
-
 if args.load:
 
     infStream.write('\nLoading model from file: ' + args.load + '\n')
@@ -40,9 +34,7 @@ if args.load:
 elif args.cg:
 
     # Create the model
-    model = ComputationalGraph(x = x,
-                               y = y,
-                               schema = yaml.load(open(args.cg,'r')),
+    model = ComputationalGraph(schema = yaml.load(open(args.cg,'r')),
                                log   = log,
                                learnRate = args.learnRate,
                                momentum  = args.momentum,
@@ -56,7 +48,16 @@ else:
     targetType = np.float
 
 # Write description of the model to infStream
-infStream.write('\n' + str(model) + '\n\n')
+infStream.write('\n' + str(model) + '\n')
+
+if args.validData:
+
+    infStream.write("Caching validation data for monitoring\n")
+
+    x_valid,y_valid = DataReader(args.validData,
+                                 targetType = targetType).cache()
+
+infStream.write('\n')
 
 if args.trainData:
 
@@ -90,8 +91,20 @@ if args.trainData:
 
             if n % nTh == 0:
                 infStream.write('Pass ' + str(passIdx) + ', batch ' + 
-                                str(nBatches) + ', avg.cost ' + str(currMeanCost) + '\n')
+                                str(nBatches) + ', avg. train cost ' + str(currMeanCost))
+
+                if args.validData:
+                    if model.type != 'autoencoder':
+                        validCost = model.supervised_cost(x_valid,y_valid)
+                        infStream.write(', validation cost ' + str(validCost))
+                    else:
+                        validCost = model.unsupervised_cost(x_valid)
+                        infStream.write(', validation cost ' + str(validCost))
+                        
+                infStream.write('\n')
+
                 n = 0
+
                 currMeanCost = 0.0
 
         # After each successful pass, rewind the data reader for training
