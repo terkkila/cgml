@@ -21,10 +21,12 @@ def validateSchema(schema):
     if not schema.get("graph"):
         raise Exception("Schema does not have field 'graph'")
 
-    if len(schema['graph']) == 0:
+    nLayers = len(schema['graph'])
+
+    if nLayers == 0:
         raise Exception("Graph in schema has no layers")
 
-    for layer in schema['graph']:
+    for i,layer in zip(xrange(nLayers),schema['graph']):
 
         if not layer.get('n_in'):
             raise Exception("Layer " + str(layer) + " is missing 'n_in'")
@@ -44,9 +46,15 @@ def validateSchema(schema):
         if layer['activation'] not in activationMap.keys():
             raise Exception("Activation of the layer " + str(layer) + " is not of allowed type: " + 
                             str(activationMap.keys()))
+
+        if layer['activation'] == 'conv2d' and i > 0:
+            raise Exception("Convolution operator can currently only appear in the first layer")
         
         if layer['activation'] == 'conv2d' and not layer.get('n_filters'):
             raise Exception("When using activation 'conv2d', the number of filters 'n_filters' needs to be specified")
+
+        if layer['activation'] == 'conv2d' and layer['n_filters'] != 1:
+            raise Exception("When using activation 'conv2d', the number of filters 'n_filters' is currently limited to 1")
 
         if layer['activation'] == 'conv2d' and not layer.get('filter_dim'):
             raise Exception("When using activation 'conv2d', the filter dimensionality 'filter_dim' needs to be specified")

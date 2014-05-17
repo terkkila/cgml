@@ -2,21 +2,6 @@
 import numpy as np
 import theano
 import theano.tensor as T
-
-def makeRandomClassificationData(n = None, n_in = None, n_out = None):
-
-    x_train = np.random.rand(n,n_in)
-    y_train = np.random.randint(0,n_out,n)
-
-    return (x_train,y_train)
-
-def makeRandomRegressionData(n = None, n_in = None, n_out = None):
-
-    x_train = np.random.rand(n,n_in)
-    y_train = np.random.rand(n,1)
-
-    return (x_train,y_train)
-    
     
 def makeShared(data, borrow=True):
     """ Function that loads the dataset into shared variables
@@ -32,7 +17,7 @@ def makeShared(data, borrow=True):
                                     dtype = theano.config.floatX),
                          borrow = borrow)
 
-
+    
 def makeSharedWeightMatrix(rng        = None,
                            n_in       = None,
                            n_out      = None,
@@ -70,6 +55,17 @@ def makeSharedWeightMatrix(rng        = None,
     
     return W
 
+def makeSharedConvolutionFilter(rng = None,
+                                filter_dim = None,
+                                randomInit = True):
+
+    
+    W = makeSharedWeightMatrix(rng = rng,
+                               n_in = filter_dim,
+                               n_out = filter_dim,
+                               randomInit = randomInit)
+    
+    return W.reshape((1,1,filter_dim,filter_dim))
 
 def makeSharedBiasVector(rng        = None,
                          n_in       = None,

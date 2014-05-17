@@ -126,8 +126,13 @@ class ComputationalGraph(object):
         # Run schema validator before we do anything
         validateSchema(schema)
 
-        # Symbolic input matrix
-        x = T.dmatrix('x')
+        if schema['graph'][0]['activation'] == 'conv2d':
+
+            x = T.tensor4('x')
+
+        else:
+
+            x = T.dmatrix('x')
         
         # Symbolic output vector
         y = T.lvector('y')

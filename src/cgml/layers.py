@@ -2,7 +2,7 @@
 import theano
 import theano.tensor as T
 import theano.tensor.shared_randomstreams
-from data import makeSharedWeightMatrix,makeSharedBiasVector
+from data import makeSharedWeightMatrix,makeSharedBiasVector,makeSharedConvolutionFilter
 
 def _dropout_from_layer_input(input = None,
                               p     = None,
@@ -123,17 +123,15 @@ class ConvolutionLayer(object):
 
         # Create W if not given
         if not W:
-            self.W = makeSharedWeightMatrix(rng = rng,
-                                            n_in = filter_dim,
-                                            n_out = filter_dim,
-                                            activation = self.activation,
-                                            randomInit = randomInit)
+            self.W = makeSharedConvolutionFilter(rng = rng,
+                                                 filter_dim = filter_dim,
+                                                 randomInit = randomInit)
         else:
             self.W = W
         
-        self.output = self.input
-            
-        #self.output = self.activation(self.input,self.W)
+        # Output will be flattened once the input comes through 
+        # the convolution operator
+        self.output = self.activation(self.input,self.W).flatten()
 
         self.params = [self.W]
 
