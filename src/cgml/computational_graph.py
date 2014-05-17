@@ -2,7 +2,7 @@
 import numpy as np
 import theano
 import theano.tensor as T
-from cgml.layers import Layer,DropoutLayer
+from cgml.layers import Layer,ConvolutionLayer
 from cgml.costs import nllCost,sqerrCost,crossEntCost
 from cgml.optimizers import MSGD
 from cgml.schema import validateSchema,allowedGraphs,activationMap
@@ -37,16 +37,31 @@ def parseLayers(x,schema,rng):
     for i in xrange(nLayers):
 
         currDropoutLayer = schema['graph'][i]
-        
-        dropoutLayers.append( DropoutLayer(rng        = rng,
-                                           input      = lastOutput,
-                                           n_in       = lastNOut,
-                                           n_out      = currDropoutLayer['n_out'],
-                                           activation = activationMap[
-                                               currDropoutLayer['activation'] ],
-                                           randomInit = randomInit,
-                                           p          = currDropoutLayer['dropout']) )
 
+        if currDropoutLayer['activation'] != 'conv2d':
+            
+            dropoutLayers.append( Layer(rng        = rng,
+                                        input      = lastOutput,
+                                        n_in       = lastNOut,
+                                        n_out      = currDropoutLayer['n_out'],
+                                        activation = activationMap[
+                        currDropoutLayer['activation'] ],
+                                        randomInit = randomInit,
+                                        dropout    = currDropoutLayer['dropout']) )
+
+        else:
+            
+            dropoutLayers.append( ConvolutionLayer(rng        = rng,
+                                                   input      = lastOutput,
+                                                   n_in       = lastNOut,
+                                                   n_out      = currDropoutLayer['n_out'],
+                                                   activation = activationMap[
+                        currDropoutLayer['activation'] ],
+                                                   randomInit = randomInit,
+                                                   dropout    = currDropoutLayer['dropout'],
+                                                   n_filters  = currDropoutLayer['n_filters'],
+                                                   filter_dim = currDropoutLayer['filter_dim']) )
+            
         if schema['type'] == 'autoencoder' and i >= nLayers/2:
             dropoutLayers[-1].W = dropoutLayers[nLayers-1-i].W.T
 
@@ -58,17 +73,35 @@ def parseLayers(x,schema,rng):
 
     for i in xrange(nLayers):
 
+        activationStr = schema['graph'][i]['activation']
+
         currDropoutLayer = dropoutLayers[i]
         
-        q = 1 - currDropoutLayer.p
+        q = 1 - currDropoutLayer.dropout
         
-        layers.append( Layer(rng = rng,
-                             input = lastOutput,
-                             n_in  = lastNOut,
-                             n_out = currDropoutLayer.n_out,
-                             activation = currDropoutLayer.activation,
-                             W = currDropoutLayer.W * q,
-                             b = currDropoutLayer.b))
+        if activationStr != 'conv2d':
+            
+            layers.append( Layer(rng = rng,
+                                 input = lastOutput,
+                                 n_in  = lastNOut,
+                                 n_out = currDropoutLayer.n_out,
+                                 activation = currDropoutLayer.activation,
+                                 W = currDropoutLayer.W * q,
+                                 b = currDropoutLayer.b,
+                                 dropout = 0) )
+
+        else:
+
+            layers.append( ConvolutionLayer(rng = rng,
+                                            input = lastOutput,
+                                            n_in  = lastNOut,
+                                            n_out = currDropoutLayer.n_out,
+                                            activation = currDropoutLayer.activation,
+                                            W = currDropoutLayer.W * q,
+                                            dropout = 0,
+                                            n_filters = currDropoutLayer.n_filters,
+                                            filter_dim = currDropoutLayer.filter_dim) )
+
 
         lastOutput = layers[-1].output
         lastNOut   = layers[-1].n_out

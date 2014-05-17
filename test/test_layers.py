@@ -11,7 +11,7 @@ def assertModelWeightsMatch(model):
         W,b = layer.weights()
         W_prime,b_prime = dropoutLayer.weights()
         
-        q = 1 - dropoutLayer.p
+        q = 1 - dropoutLayer.dropout
 
         assert sum(W.flatten() - q * W_prime.flatten()) == 0
         assert sum(b.flatten() - b_prime.flatten()) == 0

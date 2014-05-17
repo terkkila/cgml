@@ -29,7 +29,8 @@ def test_conv2d_layer():
               'randomInit':True,
               'graph':
                   [{'activation':'conv2d',
-                    'filter':[1,0,0,0,1,0,0,0,1],
+                    'n_filters':1,
+                    'filter_dim':3,
                     'n_in':16,
                     'n_out':4,
                     'dropout':0.0},

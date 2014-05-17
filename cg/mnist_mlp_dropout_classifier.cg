@@ -19,4 +19,4 @@ graph:
  - activation: softmax
    n_in:       300
    n_out:      10
-   dropout:    0.0
+   dropout:    0.2

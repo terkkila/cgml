@@ -45,8 +45,11 @@ def validateSchema(schema):
             raise Exception("Activation of the layer " + str(layer) + " is not of allowed type: " + 
                             str(activationMap.keys()))
         
-        if layer['activation'] == 'conv2d' and not layer.get('filter'):
-            raise Exception("When using activation 'conv2d', field 'filter' needs to be specified")
+        if layer['activation'] == 'conv2d' and not layer.get('n_filters'):
+            raise Exception("When using activation 'conv2d', the number of filters 'n_filters' needs to be specified")
+
+        if layer['activation'] == 'conv2d' and not layer.get('filter_dim'):
+            raise Exception("When using activation 'conv2d', the filter dimensionality 'filter_dim' needs to be specified")
 
         if layer.get('dropout') == None:
             raise Exception("Layer " + str(layer) + " is missing 'dropout'")
