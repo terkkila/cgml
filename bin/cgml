@@ -96,7 +96,10 @@ if args.trainData:
                 if args.validData:
                     if model.type != 'autoencoder':
                         validCost = model.supervised_cost(x_valid,y_valid)
-                        infStream.write(', validation cost ' + str(validCost))
+                        yhat = model.predict(x_valid)
+                        pMisClass = np.mean(yhat != y_valid)
+                        infStream.write(', validation cost ' + str(validCost) + 
+                                        ', classification error ' + str(100*pMisClass) + "%")
                     else:
                         validCost = model.unsupervised_cost(x_valid)
                         infStream.write(', validation cost ' + str(validCost))
