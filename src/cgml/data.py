@@ -3,7 +3,7 @@ import numpy as np
 import theano
 import theano.tensor as T
     
-def makeShared(data, borrow=True):
+def makeShared(data, borrow = True, name = None):
     """ Function that loads the dataset into shared variables
     
     The reason we store our dataset in shared variables is to allow
@@ -15,14 +15,15 @@ def makeShared(data, borrow=True):
 
     return theano.shared(np.asarray(data,
                                     dtype = theano.config.floatX),
-                         borrow = borrow)
+                         borrow = borrow,
+                         name = name)
 
     
-def makeSharedWeightMatrix(rng        = None,
-                           n_in       = None,
-                           n_out      = None,
-                           activation = None,
-                           randomInit = True):
+def makeWeightMatrix(rng        = None,
+                     n_in       = None,
+                     n_out      = None,
+                     activation = None,
+                     randomInit = True):
     
     # `W` is initialized with `W_values` which is uniformely sampled
     # from sqrt(-6./(n_in+n_hidden)) and sqrt(6./(n_in+n_hidden))
@@ -49,29 +50,27 @@ def makeSharedWeightMatrix(rng        = None,
     # In case we do not want random weights, we set all of them to zero
     else:
         W_values = np.zeros((n_in,n_out), dtype = theano.config.floatX)
-
-    # Make W shared theano variable
-    W = theano.shared(value = W_values, name = 'W')
     
-    return W
+    return W_values
 
-def makeSharedConvolutionFilter(rng = None,
-                                filter_dim = None,
-                                randomInit = True):
+def makeConvolutionFilter(rng = None,
+                          filter_width = None,
+                          randomInit = True):
 
     
-    W = makeSharedWeightMatrix(rng = rng,
-                               n_in = filter_dim,
-                               n_out = filter_dim,
-                               randomInit = randomInit)
+    W_values = makeWeightMatrix(rng = rng,
+                                n_in = filter_width,
+                                n_out = filter_width,
+                                randomInit = randomInit)
     
-    return W.reshape((1,1,filter_dim,filter_dim))
+    return W_values.reshape((1,1,filter_width,filter_width))
 
-def makeSharedBiasVector(rng        = None,
-                         n_in       = None,
-                         n_out      = None,
-                         activation = None,
-                         randomInit = True):
+
+def makeBiasVector(rng        = None,
+                   n_in       = None,
+                   n_out      = None,
+                   activation = None,
+                   randomInit = True):
     
 
     if randomInit:
@@ -85,10 +84,7 @@ def makeSharedBiasVector(rng        = None,
 
         b_values = np.zeros((n_out,), dtype = theano.config.floatX)
 
-    # ... and make b shared theano variable
-    b = theano.shared(value = b_values, name='b')
-
-    return b
+    return b_values
 
 
 

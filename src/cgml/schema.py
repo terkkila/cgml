@@ -1,8 +1,12 @@
 
+import math
 import theano.tensor as T
 from cgml.activations import activationMap
 
 allowedGraphs = ['classifier','regressor','autoencoder','reinforcement-learner']
+
+def isQuadratic(x):
+    return math.sqrt(x) % 1 == 0 
 
 def validateSchema(schema):
 
@@ -47,17 +51,30 @@ def validateSchema(schema):
             raise Exception("Activation of the layer " + str(layer) + " is not of allowed type: " + 
                             str(activationMap.keys()))
 
-        if layer['activation'] == 'conv2d' and i > 0:
-            raise Exception("Convolution operator can currently only appear in the first layer")
+        if layer['activation'] == 'conv2d':
+
+            if i > 0:
+                raise Exception("Convolution operator can currently only appear in the first layer")
         
-        if layer['activation'] == 'conv2d' and not layer.get('n_filters'):
-            raise Exception("When using activation 'conv2d', the number of filters 'n_filters' needs to be specified")
+            if not layer.get('n_filters'):
+                raise Exception("When using activation 'conv2d', the number of filters 'n_filters' needs to be specified")
+            
+            if layer['n_filters'] != 1:
+                raise Exception("When using activation 'conv2d', the number of filters 'n_filters' is currently limited to 1")
 
-        if layer['activation'] == 'conv2d' and layer['n_filters'] != 1:
-            raise Exception("When using activation 'conv2d', the number of filters 'n_filters' is currently limited to 1")
+            if not layer.get('filter_width'):
+                raise Exception("When using activation 'conv2d', the filter dimensionality 'filter_width' needs to be specified")
 
-        if layer['activation'] == 'conv2d' and not layer.get('filter_dim'):
-            raise Exception("When using activation 'conv2d', the filter dimensionality 'filter_dim' needs to be specified")
+            if not isQuadratic(layer['n_in']):
+                raise Exception("When using activation 'conv2d', input must be mappable to a square shape")
+
+            imWidth = math.sqrt(layer['n_in'])
+
+            if imWidth < layer['filter_width']:
+                raise Exception("When using activation 'conv2d', the filter cannot have greater width than that of input")
+
+            if layer['n_out'] != (imWidth - layer['filter_width'] + 1) ** 2:
+                raise Exception("When using activation 'conv2d', the output size should be equal to: '(im_width - filter_width + 1)^2'")
 
         if layer.get('dropout') == None:
             raise Exception("Layer " + str(layer) + " is missing 'dropout'")

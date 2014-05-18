@@ -51,16 +51,16 @@ def parseLayers(x,schema,rng):
 
         else:
             
-            dropoutLayers.append( ConvolutionLayer(rng        = rng,
-                                                   input      = lastOutput,
-                                                   n_in       = lastNOut,
-                                                   n_out      = currDropoutLayer['n_out'],
-                                                   activation = activationMap[
+            dropoutLayers.append( ConvolutionLayer(rng          = rng,
+                                                   input        = lastOutput,
+                                                   n_in         = lastNOut,
+                                                   n_out        = currDropoutLayer['n_out'],
+                                                   activation   = activationMap[
                         currDropoutLayer['activation'] ],
-                                                   randomInit = randomInit,
-                                                   dropout    = currDropoutLayer['dropout'],
-                                                   n_filters  = currDropoutLayer['n_filters'],
-                                                   filter_dim = currDropoutLayer['filter_dim']) )
+                                                   randomInit   = randomInit,
+                                                   dropout      = currDropoutLayer['dropout'],
+                                                   n_filters    = currDropoutLayer['n_filters'],
+                                                   filter_width = currDropoutLayer['filter_width']) )
             
         if schema['type'] == 'autoencoder' and i >= nLayers/2:
             dropoutLayers[-1].W = dropoutLayers[nLayers-1-i].W.T
@@ -100,7 +100,7 @@ def parseLayers(x,schema,rng):
                                             W = currDropoutLayer.W * q,
                                             dropout = 0,
                                             n_filters = currDropoutLayer.n_filters,
-                                            filter_dim = currDropoutLayer.filter_dim) )
+                                            filter_width = currDropoutLayer.filter_width) )
 
 
         lastOutput = layers[-1].output
@@ -126,23 +126,30 @@ class ComputationalGraph(object):
         # Run schema validator before we do anything
         validateSchema(schema)
 
-        if schema['graph'][0]['activation'] == 'conv2d':
+        # Input data is always a data matrix
+        x = T.dmatrix('x')
 
-            x = T.tensor4('x')
-
-        else:
-
-            x = T.dmatrix('x')
+        # If the first layer is a convolution layer...
+        #if schema['graph'][0]['activation'] == 'conv2d':
         
+        # We will reshape the input matrix to a 4D tensor
+        #    x_im = T.reshape(x,(x.shape[0],1,T.sqrt(x.shape[1]),T.sqrt(x.shape[1])))
+        
+        # And clamp the input of the CG to the input image
+        #    self.input = x_im
+        
+        #else:
+        
+        # Otherwise clamp the input to the input matrix
+        self.input = x
+
         # Symbolic output vector
+        # NOTE: Currently we assume classification
         y = T.lvector('y')
 
         self.seed = seed
 
         self.rng = np.random.RandomState(self.seed)
-
-        # Take symbolic representation of the input data
-        self.input = x
 
         # Schema to build the model from
         self.schema = schema

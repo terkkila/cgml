@@ -2,7 +2,7 @@
 import theano
 import theano.tensor as T
 import theano.tensor.shared_randomstreams
-from data import makeSharedWeightMatrix,makeSharedBiasVector,makeSharedConvolutionFilter
+from data import makeShared, makeWeightMatrix, makeBiasVector, makeConvolutionFilter
 
 def _dropout_from_layer_input(input = None,
                               p     = None,
@@ -53,22 +53,24 @@ class Layer(object):
 
         # Create W if not given
         if not W:
-            self.W = makeSharedWeightMatrix(rng = rng,
-                                            n_in = n_in,
-                                            n_out = n_out,
-                                            activation = self.activation,
-                                            randomInit = randomInit)
+            self.W = makeShared(makeWeightMatrix(rng = rng,
+                                                 n_in = n_in,
+                                                 n_out = n_out,
+                                                 activation = self.activation,
+                                                 randomInit = randomInit),
+                                name = 'b')
         else:
             self.W = W
         
             
         # Create b if not given
         if not b:
-            self.b = makeSharedBiasVector(rng = rng,
-                                          n_in = n_in,
-                                          n_out = n_out,
-                                          activation = self.activation,
-                                          randomInit = False)
+            self.b = makeShared(makeBiasVector(rng = rng,
+                                               n_in = n_in,
+                                               n_out = n_out,
+                                               activation = self.activation,
+                                               randomInit = False),
+                                name = 'b')
         else:
             self.b = b
 
@@ -96,7 +98,7 @@ class ConvolutionLayer(object):
                  W = None,
                  dropout = 0,
                  n_filters = None,
-                 filter_dim = 0):
+                 filter_width = 0):
 
         assert n_filters == 1
 
@@ -119,19 +121,34 @@ class ConvolutionLayer(object):
         self.activation = activation
 
         self.n_filters = n_filters
-        self.filter_dim = filter_dim
+        self.filter_width = filter_width
 
         # Create W if not given
         if not W:
-            self.W = makeSharedConvolutionFilter(rng = rng,
-                                                 filter_dim = filter_dim,
-                                                 randomInit = randomInit)
+            self.W = makeShared(makeConvolutionFilter(rng = rng,
+                                                      filter_width = filter_width,
+                                                      randomInit = randomInit),
+                                name = 'W')
         else:
             self.W = W
         
         # Output will be flattened once the input comes through 
         # the convolution operator
-        self.output = self.activation(self.input,self.W).flatten()
+        #nBatch,nFeat = self.input.shape
+        #imSize = T.sqrt(nFeat)
+        self.output_im = self.activation(T.reshape(self.input,
+                                                   (self.input.shape[0],
+                                                    1,
+                                                    T.cast(T.sqrt(self.input.shape[1]),
+                                                           'int32'),
+                                                    T.cast(T.sqrt(self.input.shape[1]),
+                                                           'int32'))),
+                                         self.W)
+
+        #self.output_im = self.activation(self.input,self.W)
+
+        self.output = T.reshape(self.output_im,(self.output_im.shape[0],
+                                                self.output_im.shape[2]**2))
 
         self.params = [self.W]
 
