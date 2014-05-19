@@ -53,28 +53,43 @@ def validateSchema(schema):
 
         if layer['activation'] == 'conv2d':
 
-            if i > 0:
-                raise Exception("Convolution operator can currently only appear in the first layer")
-        
-            if not layer.get('n_filters'):
-                raise Exception("When using activation 'conv2d', the number of filters 'n_filters' needs to be specified")
-            
-            if layer['n_filters'] != 1:
-                raise Exception("When using activation 'conv2d', the number of filters 'n_filters' is currently limited to 1")
+            whenConv = "When using activation 'conv2d'"
 
+            if not layer.get('n_filters'):
+                raise Exception(whenConv+", the number of filters 'n_filters' " +
+                                "needs to be specified")
+            
             if not layer.get('filter_width'):
-                raise Exception("When using activation 'conv2d', the filter dimensionality 'filter_width' needs to be specified")
+                raise Exception(whenConv+", the filter dimensionality 'filter_width' " +
+                                "needs to be specified")
 
             if not isQuadratic(layer['n_in']):
-                raise Exception("When using activation 'conv2d', input must be mappable to a square shape")
+                raise Exception(whenConv+", input must be mappable to a square shape")
 
             imWidth = math.sqrt(layer['n_in'])
 
             if imWidth < layer['filter_width']:
-                raise Exception("When using activation 'conv2d', the filter cannot have greater width than that of input")
+                raise Exception(whenConv+", the filter cannot have greater width " +
+                                "than that of input")
 
-            if layer['n_out'] != (imWidth - layer['filter_width'] + 1) ** 2:
-                raise Exception("When using activation 'conv2d', the output size should be equal to: '(im_width - filter_width + 1)^2'")
+            if not layer.get('subsample'):
+                raise Exception(whenConv+", subsample needs to be specified")
+
+            if (type(layer['subsample']) != list or
+                len(layer['subsample']) != 2 or
+                type(layer['subsample'][0]) != int or
+                type(layer['subsample'][1]) != int):
+                raise Exception(whenConv+", subsample should be a 2D tuple of integers")
+
+            if layer['subsample'][0] != layer['subsample'][1]:
+                raise Exception(whenConv+", subsampling both dimensions should be the same")
+
+            if ( layer['n_out'] != layer['n_filters'] * 
+                 (imWidth - layer['filter_width'] + 1) ** 2 / 
+                 (layer['subsample'][0]*layer['subsample'][1]) ):
+                raise Exception("When using activation 'conv2d', the output size " +
+                                "should be equal to: 'n_filters*(im_width - filter_width + 1)^2 / " +
+                                "(subsample[0]*subsample[1])'")
 
         if layer.get('dropout') == None:
             raise Exception("Layer " + str(layer) + " is missing 'dropout'")

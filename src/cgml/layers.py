@@ -2,7 +2,7 @@
 import theano
 import theano.tensor as T
 import theano.tensor.shared_randomstreams
-from data import makeShared, makeWeightMatrix, makeBiasVector, makeConvolutionFilter
+from data import makeShared, makeWeightMatrix, makeBiasVector, makeConvolutionFilters
 
 def _dropout_from_layer_input(input = None,
                               p     = None,
@@ -98,9 +98,8 @@ class ConvolutionLayer(object):
                  W = None,
                  dropout = 0,
                  n_filters = None,
-                 filter_width = 0):
-
-        assert n_filters == 1
+                 filter_width = 0,
+                 subsample = None):
 
         self.rng = rng
 
@@ -122,20 +121,20 @@ class ConvolutionLayer(object):
 
         self.n_filters = n_filters
         self.filter_width = filter_width
+        self.subsample = subsample
 
         # Create W if not given
         if not W:
-            self.W = makeShared(makeConvolutionFilter(rng = rng,
-                                                      filter_width = filter_width,
-                                                      randomInit = randomInit),
+            self.W = makeShared(makeConvolutionFilters(rng = rng,
+                                                       n_filters = n_filters,
+                                                       filter_width = filter_width,
+                                                       randomInit = randomInit),
                                 name = 'W')
         else:
             self.W = W
         
-        # Output will be flattened once the input comes through 
-        # the convolution operator
-        #nBatch,nFeat = self.input.shape
-        #imSize = T.sqrt(nFeat)
+
+        # Output of the 2D convolution is a 4D tensor
         self.output_im = self.activation(T.reshape(self.input,
                                                    (self.input.shape[0],
                                                     1,
@@ -143,12 +142,13 @@ class ConvolutionLayer(object):
                                                            'int32'),
                                                     T.cast(T.sqrt(self.input.shape[1]),
                                                            'int32'))),
-                                         self.W)
+                                         self.W,
+                                         subsample = self.subsample )
+        
 
-        #self.output_im = self.activation(self.input,self.W)
-
+        # Turn the 4D tensor output back to a 2D matrix
         self.output = T.reshape(self.output_im,(self.output_im.shape[0],
-                                                self.output_im.shape[2]**2))
+                                                T.prod(self.output_im.shape[1:])))
 
         self.params = [self.W]
 

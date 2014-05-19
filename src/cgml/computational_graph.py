@@ -60,7 +60,8 @@ def parseLayers(x,schema,rng):
                                                    randomInit   = randomInit,
                                                    dropout      = currDropoutLayer['dropout'],
                                                    n_filters    = currDropoutLayer['n_filters'],
-                                                   filter_width = currDropoutLayer['filter_width']) )
+                                                   filter_width = currDropoutLayer['filter_width'],
+                                                   subsample    = currDropoutLayer['subsample']))
             
         if schema['type'] == 'autoencoder' and i >= nLayers/2:
             dropoutLayers[-1].W = dropoutLayers[nLayers-1-i].W.T
@@ -100,7 +101,8 @@ def parseLayers(x,schema,rng):
                                             W = currDropoutLayer.W * q,
                                             dropout = 0,
                                             n_filters = currDropoutLayer.n_filters,
-                                            filter_width = currDropoutLayer.filter_width) )
+                                            filter_width = currDropoutLayer.filter_width,
+                                            subsample = currDropoutLayer.subsample) )
 
 
         lastOutput = layers[-1].output
