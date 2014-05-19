@@ -10,32 +10,6 @@ CGML is a library for general-purpose Machine Learning. Underlying is the notion
 
 python setup.py install 
 
-
-## Specifying a Computational Graph
-
-Graph can be of type 
-- classifier 
-- regressor
-- autoencoder
-- reinforcement-learner
-
-Graph needs to start with an input layer, and end with an output layer
-
-Graphs are declared as:
-layer -> trans -> layer -> trans -> ... -> trans -> layer
-
-Possible transformations are:
-- linear
-- sigmoid
-- tanh
-- softmax
-
-Directory cg/ has some example computational graphs:
-```
-cg/mnist_logreg_classifier.cg
-cg/mnist_mlp_classifier.cg
-```
-
 ## Usage
 
 To see Logistic Regression in action, try:
@@ -48,12 +22,14 @@ cgml --cg cg/mnist_logreg_classifier.cg \
      | bin/score_classification
 ```
 
-To see Multilayer Perceptron in action, try:
+To see Convolutional Neural Network with dropout in action, try:
 ```
-cgml --cg cg/mnist_mlp_classifier.cg \
+cgml --cg cg/mnist_cnn_dropout_classifier.cg \
      --trainData mnist_train.tsv \
      --testData mnist_test.tsv \
      --learnRate 0.01 \
      --nPasses 10 \
+     --momentum 0.5 \
+     --batchSize 10
      | bin/score_classification
 ```
