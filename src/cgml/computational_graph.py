@@ -3,19 +3,22 @@ import numpy as np
 import theano
 import theano.tensor as T
 from cgml.layers import Layer,ConvolutionLayer
-from cgml.costs import nllCost,sqerrCost,crossEntCost
+from cgml.activations import activationMap
+from cgml.costs import costMap,nllCost,sqerrCost,crossEntCost
 from cgml.optimizers import MSGD
-from cgml.schema import validateSchema,allowedGraphs,activationMap
+from cgml.schema import validateSchema
 
 def parseLayers(x,schema,rng):
-
-    assert schema['type'] in allowedGraphs
 
     schemaLayers = schema['graph']
 
     nLayers = len(schemaLayers)
 
-    if schema['type'] == 'autoencoder':
+    if schema.get('unsupervised-cost'):
+
+        modelType = 'autoencoder'
+
+        print "!!NOTE: temporarily assuming that graph having unsupervised cost is an autoencoder!!"
 
         if nLayers % 2 != 0:
             raise Exception("Autoencoder graph must have even number of layers")
@@ -24,13 +27,17 @@ def parseLayers(x,schema,rng):
             if schemaLayers[i]['n_in'] != schemaLayers[nLayers - 1 - i]['n_out']:
                 raise Exception("Autoencoder graph must be symmetric")
 
+    else:
+
+        print "!!NOTE: temporarily assuming that graph having supervised cost is a classifier!!"
+
+        modelType = 'classifier'
+
+
     # Layers of the graph
     dropoutLayers = []
     layers = []
     
-    # Should we initialize the weights randomly, or set them to zero?
-    randomInit = schema['randomInit']
-
     lastOutput = x
     lastNOut = schemaLayers[0]['n_in']
 
@@ -46,7 +53,7 @@ def parseLayers(x,schema,rng):
                                         n_out      = currDropoutLayer['n_out'],
                                         activation = activationMap[
                         currDropoutLayer['activation'] ],
-                                        randomInit = randomInit,
+                                        randomInit = True,
                                         dropout    = currDropoutLayer['dropout']) )
 
         else:
@@ -57,13 +64,13 @@ def parseLayers(x,schema,rng):
                                                    n_out        = currDropoutLayer['n_out'],
                                                    activation   = activationMap[
                         currDropoutLayer['activation'] ],
-                                                   randomInit   = randomInit,
+                                                   randomInit   = True,
                                                    dropout      = currDropoutLayer['dropout'],
                                                    n_filters    = currDropoutLayer['n_filters'],
                                                    filter_width = currDropoutLayer['filter_width'],
                                                    subsample    = currDropoutLayer['subsample']))
             
-        if schema['type'] == 'autoencoder' and i >= nLayers/2:
+        if modelType == 'autoencoder' and i >= nLayers/2:
             dropoutLayers[-1].W = dropoutLayers[nLayers-1-i].W.T
 
         lastOutput = dropoutLayers[-1].output
@@ -108,7 +115,7 @@ def parseLayers(x,schema,rng):
         lastOutput = layers[-1].output
         lastNOut   = layers[-1].n_out
         
-    return layers,dropoutLayers
+    return layers,dropoutLayers,modelType
 
 
 def percent(x):
@@ -131,17 +138,6 @@ class ComputationalGraph(object):
         # Input data is always a data matrix
         x = T.dmatrix('x')
 
-        # If the first layer is a convolution layer...
-        #if schema['graph'][0]['activation'] == 'conv2d':
-        
-        # We will reshape the input matrix to a 4D tensor
-        #    x_im = T.reshape(x,(x.shape[0],1,T.sqrt(x.shape[1]),T.sqrt(x.shape[1])))
-        
-        # And clamp the input of the CG to the input image
-        #    self.input = x_im
-        
-        #else:
-        
         # Otherwise clamp the input to the input matrix
         self.input = x
 
@@ -160,14 +156,14 @@ class ComputationalGraph(object):
             log.write('Loaded the following schema: ' +
                       str(self.schema) + '\n')
 
-        # Get model type
-        self.type = self.schema['type']
-
         # Parse layers from the schema. Input is needed to clamp
         # it with the first layer
-        self.layers,self.dropoutLayers = parseLayers(self.input,
-                                                     self.schema,
-                                                     self.rng)
+        self.layers,self.dropoutLayers,modelType = parseLayers(self.input,
+                                                               self.schema,
+                                                               self.rng)
+
+        # Get model type
+        self.type = modelType
 
         # Take number of input variables
         self.n_in = self.layers[0].n_in
@@ -204,13 +200,14 @@ class ComputationalGraph(object):
         self._unsupervised_cost = None
         self._supervised_cost = None
         
-        if self.type == 'classifier':
-            self._supervised_cost = nllCost(self.dropoutOutput,y) + self.reg
-        elif self.type == 'regressor':
-            self._supervised_cost = sqerrCost(self.dropoutOutput,y) + self.reg
-            
-        self._unsupervised_cost = sqerrCost(self.dropoutOutput,x) + self.reg
+        if self.schema.get('supervised-cost'):
+            cost = costMap[self.schema['supervised-cost']['type']]
+            self._supervised_cost = cost(self.dropoutOutput,y) + self.reg
 
+        if self.schema.get('unsupervised-cost'):
+            cost = costMap[self.schema['unsupervised-cost']['type']]
+            self._unsupervised_cost = cost(self.dropoutOutput,x) + self.reg
+    
     
     def _setUpOptimizers(self,x,y,learnRate,momentum):
 
@@ -291,18 +288,18 @@ class ComputationalGraph(object):
 
         graphStr = ' '.join(graphList)
 
-        if self.type == 'classifier':
-            supCostStr = 'Negative log-likelihood'
-        elif self.type == 'regressor':
-            supCostStr = 'Squared error'
+        if self.schema.get('supervised-cost'):
+            supCostStr = self.schema['supervised-cost']['type']
         else:
-            supCostStr = 'None'
+            supCostStr = "None"
 
-        unsupCostStr = 'Squared error'
-            
+        if self.schema.get('unsupervised-cost'):
+            unsupCostStr = self.schema['unsupervised-cost']['type']
+        else:
+            unsupCostStr = "None"
+
         return ("Computational graph:\n" +
                 " - description : " + self.schema['description'] + '\n' +
-                " - type        : " + self.schema['type']        + '\n' +
                 " - graph layout: " + graphStr                   + '\n' + 
                 " - cost(sup.)  : " + supCostStr                 + '\n' + 
                 " - cost(unsup.): " + unsupCostStr               + '\n' )

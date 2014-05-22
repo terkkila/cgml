@@ -2,8 +2,7 @@
 import math
 import theano.tensor as T
 from cgml.activations import activationMap
-
-allowedGraphs = ['classifier','regressor','autoencoder','reinforcement-learner']
+from cgml.costs import costMap
 
 def isQuadratic(x):
     return math.sqrt(x) % 1 == 0 
@@ -13,15 +12,25 @@ def validateSchema(schema):
     if not schema.get('description'):
         raise Exception("Schema does not have field 'description'")
 
-    if not schema.get('type'):
-        raise Exception("Schema does not have field 'type'")
+    if not schema.get('supervised-cost') and not schema.get('unsupervised-cost'):
+        raise Exception("Schema has to have either supervised or unsupervised cost " + 
+                        "('supervised-cost' or 'unsupervised-cost', respectively)")
 
-    if schema['type'] not in allowedGraphs:
-        raise Exception("Schema is not of allowed type: " + str(allowedGraphs))
-
-    if not schema.get('randomInit'):
-        raise Exception("Schema does not have field 'randomInit'")
+    if schema.get('supervised-cost') and schema.get('unsupervised-cost'):
+        raise Exception("Cannot have both supervised and unsupervised cost")
     
+    if schema.get('supervised-cost'):
+        if not schema['supervised-cost'].get('type'):
+            raise Exception("Supervised cost has to have 'type'")
+        if schema['supervised-cost']['type'] not in costMap.keys():
+            raise Exception("The type of supervised cost has to be in: " + str(costMap.keys()))
+
+    if schema.get('unsupervised-cost'):
+        if not schema['unsupervised-cost'].get('type'):
+            raise Exception("Unsupervised cost has to have 'type'")
+        if schema['unsupervised-cost']['type'] not in costMap.keys():
+            raise Exception("The type of unsupervised cost has to be in: " + str(costMap.keys()))
+
     if not schema.get("graph"):
         raise Exception("Schema does not have field 'graph'")
 

@@ -43,7 +43,7 @@ def test_conv2d_layer():
                   [{'activation':'conv2d',
                     'n_filters':2,
                     'filter_width':3,
-                    'subsample':[1,1]
+                    'subsample':[1,1],
                     'n_in':16,
                     'n_out':8,
                     'dropout':0.0},

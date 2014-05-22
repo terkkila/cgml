@@ -1,8 +1,7 @@
 description: MNIST digit classifier MLP
 
-type: classifier
-
-randomInit: True
+supervised-cost:
+  type: negative-log-likelihood
 
 graph:
 
