@@ -37,8 +37,8 @@ def test_conv2d_layer():
     rng = np.random.RandomState(0)
 
     schema = {'description':'test CG',
-              'type': 'classifier',
-              'randomInit':True,
+              'supervised-cost': {'type': 'negative-log-likelihood', 
+                                  'name': 'class-out'},
               'graph':
                   [{'activation':'conv2d',
                     'n_filters':2,
@@ -50,7 +50,8 @@ def test_conv2d_layer():
                    {'activation':'sigmoid',
                     'n_in':8,
                     'n_out':3,
-                    'dropout':0.0}]}
+                    'dropout':0.0,
+                    'name':'class-out'}]}
      
     model = ComputationalGraph(schema = schema,
                                learnRate = 0.01,

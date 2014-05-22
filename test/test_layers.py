@@ -21,8 +21,8 @@ def test_layers():
     rng = np.random.RandomState(0)
 
     schema = {'description':'test CG',
-              'type': 'classifier',
-              'randomInit':True,
+              'supervised-cost': {'type': 'negative-log-likelihood',
+                                  'name': 'class-out'},
               'graph':
                   [{'activation':'linear',
                     'n_in':100,
@@ -31,7 +31,8 @@ def test_layers():
                    {'activation':'sigmoid',
                     'n_in':10,
                     'n_out':3,
-                    'dropout':0.0}]}
+                    'dropout':0.0,
+                    'name':'class-out'}]}
      
     model = ComputationalGraph(schema = schema,
                                learnRate = 0.01,

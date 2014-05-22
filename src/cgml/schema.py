@@ -22,12 +22,16 @@ def validateSchema(schema):
     if schema.get('supervised-cost'):
         if not schema['supervised-cost'].get('type'):
             raise Exception("Supervised cost has to have 'type'")
+        if not schema['supervised-cost'].get('name'):
+            raise Exception("Supervised cost has to have 'name' to match with layer name")
         if schema['supervised-cost']['type'] not in costMap.keys():
             raise Exception("The type of supervised cost has to be in: " + str(costMap.keys()))
 
     if schema.get('unsupervised-cost'):
         if not schema['unsupervised-cost'].get('type'):
             raise Exception("Unsupervised cost has to have 'type'")
+        if not schema['unsupervised-cost'].get('name'):
+            raise Exception("Unsupervised cost has to have 'name' to match with layer name")
         if schema['unsupervised-cost']['type'] not in costMap.keys():
             raise Exception("The type of unsupervised cost has to be in: " + str(costMap.keys()))
 

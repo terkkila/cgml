@@ -31,16 +31,17 @@ class Layer(object):
                  randomInit = True,
                  W = None,
                  b = None,
-                 dropout = 0):
+                 dropout = 0,
+                 name = None):
 
-        self.rng = rng
+        self.name = name
 
         self.dropout = dropout
 
         # If dropout is positive, apply it to the input
         if dropout > 0:
 
-            self.input = _dropout_from_layer_input(rng   = self.rng,
+            self.input = _dropout_from_layer_input(rng   = rng,
                                                    input = input,
                                                    p     = self.dropout)
         else:
@@ -99,16 +100,17 @@ class ConvolutionLayer(object):
                  dropout = 0,
                  n_filters = None,
                  filter_width = 0,
-                 subsample = None):
+                 subsample = None,
+                 name = None):
 
-        self.rng = rng
-
+        self.name = name
+        
         self.dropout = dropout
 
         # If dropout is positive, apply it to the input
         if dropout > 0:
 
-            self.input = _dropout_from_layer_input(rng   = self.rng,
+            self.input = _dropout_from_layer_input(rng   = rng,
                                                    input = input,
                                                    p     = self.dropout)
         else:
