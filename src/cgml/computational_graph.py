@@ -167,7 +167,8 @@ def parseLayers(x,schema,rng):
                                  activation = currDropoutLayer.activation,
                                  W = currDropoutLayer.W * q,
                                  b = currDropoutLayer.b,
-                                 dropout = 0) )
+                                 dropout = 0,
+                                 name = currDropoutLayer.name) )
 
             if layerHasBranch:
                 branchLayer = Layer(rng   = rng,
@@ -177,7 +178,8 @@ def parseLayers(x,schema,rng):
                                     activation = branchDropoutLayer.activation,
                                     W = branchDropoutLayer.W * q,
                                     b = branchDropoutLayer.b,
-                                    dropout = 0)
+                                    dropout = 0,
+                                    name = branchDropoutLayer.name)
 
         else:
 
@@ -190,7 +192,8 @@ def parseLayers(x,schema,rng):
                                             dropout = 0,
                                             n_filters = currDropoutLayer.n_filters,
                                             filter_width = currDropoutLayer.filter_width,
-                                            subsample = currDropoutLayer.subsample) )
+                                            subsample = currDropoutLayer.subsample,
+                                            name = currDropoutLayer.name) )
 
 
         lastOutput = layers[-1].output

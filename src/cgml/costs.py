@@ -24,7 +24,7 @@ def sqerrCost(yhat, y):
 
 
 def crossEntCost(yhat,y):
-    return T.mean(-T.sum(y * T.log(yhat) + (1 - y) * T.log(1 - yhat), axis=1))
+    return T.mean(-T.mean(y * T.log(yhat) + (1 - y) * T.log(1 - yhat), axis=1))
 
 costMap = {
     'negative-log-likelihood': nllCost,

@@ -107,9 +107,17 @@ if args.trainData:
                         validCost = model.unsupervised_cost(x_valid)
                         infStream.write(', validation cost ' + str(validCost))
                     elif model.type == 'supervised-autoencoder':
-                        validCost = model.hybrid_cost(x_valid,y_valid)
-                        infStream.write(', validation cost ' + str(validCost))
-                        
+                        validSupCost = model.supervised_cost(x_valid,y_valid)
+                        validUnsupCost = model.unsupervised_cost(x_valid)
+                        validHybCost = model.hybrid_cost(x_valid,y_valid)
+                        yhat = model.predict(x_valid)
+                        pMisClass = np.mean(yhat != y_valid)
+                        infStream.write(', valid.sup.cost ' + str(validSupCost) +
+                                        ', valid.unsup.cost ' + str(validUnsupCost) + 
+                                        ', valid.hyb.cost ' + str(validHybCost) + 
+                                        ', classification error ' + str(100*pMisClass) + "%")
+                    
+
                 infStream.write('\n')
 
                 n = 0
@@ -158,9 +166,11 @@ if args.testData:
             
             outStream.write( strMat(zip(y_test,model.encode(x_test))) + '\n' )
 
+        elif model.type == 'supervised-autoencoder':
 
-
-
+            outStream.write( strMat(zip(y_test,
+                                        model.predict(x_test),
+                                        model.encode(x_test))) + '\n' )
 
 
 

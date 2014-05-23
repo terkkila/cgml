@@ -5,18 +5,18 @@ supervised-cost:
   name: class-out
 
 unsupervised-cost:
-  type: squared-error
+  type: cross-entropy
   name: decode-out
 
 graph:
 
  - activation: sigmoid
    n_in:       784
-   n_out:      100
-   dropout:    0.5
+   n_out:      300
+   dropout:    0.0
 
  - activation: sigmoid
-   n_in:       100
+   n_in:       300
    n_out:      2
    dropout:    0.0
    name:       encode-out
@@ -30,11 +30,11 @@ graph:
 
  - activation: sigmoid
    n_in:       2
-   n_out:      100
+   n_out:      300
    dropout:    0.0
 
  - activation: sigmoid
-   n_in:       100
+   n_in:       300
    n_out:      784
    dropout:    0.0
    name:       decode-out
