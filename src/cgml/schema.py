@@ -12,12 +12,12 @@ def validateSchema(schema):
     if not schema.get('description'):
         raise Exception("Schema does not have field 'description'")
 
-    if not schema.get('supervised-cost') and not schema.get('unsupervised-cost'):
-        raise Exception("Schema has to have either supervised or unsupervised cost " + 
-                        "('supervised-cost' or 'unsupervised-cost', respectively)")
+    nCostDefs = ( (1 if schema.get('supervised-cost') else 0) + 
+                  (1 if schema.get('unsupervised-cost') else 0) )
 
-    if schema.get('supervised-cost') and schema.get('unsupervised-cost'):
-        raise Exception("Cannot have both supervised and unsupervised cost")
+    if nCostDefs == 0:
+        raise Exception("At least one of the following costs should be defined: " + 
+                        "'supervised-cost', or 'unsupervised-cost'")
     
     if schema.get('supervised-cost'):
         if not schema['supervised-cost'].get('type'):

@@ -42,7 +42,7 @@ elif args.cg:
                                L2Reg = args.L2Reg,
                                seed = args.seed)
 
-if model.type == 'classifier':
+if model.type in ['classifier','supervised-autoencoder']:
     targetType = np.int
 else:
     targetType = np.float
@@ -83,10 +83,13 @@ if args.trainData:
             
             nBatches += 1
             n += 1 
+
+            if model.type == 'supervised-autoencoder':
+                currMeanCost += model.hybrid_update(x_train,y_train) / n
             
-            if model.type != 'autoencoder':
+            elif model.type == 'classifier':
                 currMeanCost += model.supervised_update(x_train,y_train) / n
-            else:
+            elif model.type == 'autoencoder':
                 currMeanCost += model.unsupervised_update(x_train) / n
 
             if n % nTh == 0:
@@ -94,14 +97,17 @@ if args.trainData:
                                 str(nBatches) + ', avg. train cost ' + str(currMeanCost))
 
                 if args.validData:
-                    if model.type != 'autoencoder':
+                    if model.type == 'classifier':
                         validCost = model.supervised_cost(x_valid,y_valid)
                         yhat = model.predict(x_valid)
                         pMisClass = np.mean(yhat != y_valid)
                         infStream.write(', validation cost ' + str(validCost) + 
                                         ', classification error ' + str(100*pMisClass) + "%")
-                    else:
+                    elif model.type == 'autoencoder':
                         validCost = model.unsupervised_cost(x_valid)
+                        infStream.write(', validation cost ' + str(validCost))
+                    elif model.type == 'supervised-autoencoder':
+                        validCost = model.hybrid_cost(x_valid,y_valid)
                         infStream.write(', validation cost ' + str(validCost))
                         
                 infStream.write('\n')

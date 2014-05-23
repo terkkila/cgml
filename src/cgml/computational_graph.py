@@ -8,13 +8,57 @@ from cgml.costs import costMap
 from cgml.optimizers import MSGD
 from cgml.schema import validateSchema
 
+class DAG(object):
+
+
+    def __init__(self):
+
+        self.nodes = []
+        self.childrenByIdx = {}
+        self.name2idx = {}
+
+
+    def addNode(self,node):
+
+        if not self.name2idx.get(node.name):
+            idx = len(self.nodes)
+            self.name2idx[name] = idx
+            self.nodes.append(node)
+            self.childrenByIdx[idx] = []
+
+
+    def addEdge(self,parent,child):
+
+        self.addNode(parent)
+        self.addNode(child)
+
+        parentIdx = self.name2idx[parent.name]
+        childIdx  = self.name2idx[child.name]
+
+        self.childrenByIdx[parentIdx].append(childIdx)
+
+        
+
+
+    def getNode(self,name):
+        return self.nodes[ self.name2idx[name] ]
+
+        
+        
+
 def parseLayers(x,schema,rng):
 
     schemaLayers = schema['graph']
 
     nLayers = len(schemaLayers)
 
-    if schema.get('unsupervised-cost'):
+    if schema.get('unsupervised-cost') and schema.get('supervised-cost'):
+        
+        print "!!NOTE: temporarily assuming that graph having hybrid cost is a supervised autoencoder!!"
+        
+        modelType = 'supervised-autoencoder'
+
+    elif schema.get('unsupervised-cost'):
 
         modelType = 'autoencoder'
 
@@ -27,7 +71,7 @@ def parseLayers(x,schema,rng):
             if schemaLayers[i]['n_in'] != schemaLayers[nLayers - 1 - i]['n_out']:
                 raise Exception("Autoencoder graph must be symmetric")
 
-    else:
+    elif schema.get('supervised-cost'):
 
         print "!!NOTE: temporarily assuming that graph having supervised cost is a classifier!!"
 
@@ -37,6 +81,9 @@ def parseLayers(x,schema,rng):
     # Layers of the graph
     dropoutLayers = []
     layers = []
+
+    branchDropoutLayer = None
+    branchLayer = None
     
     lastOutput = x
     lastNOut = schemaLayers[0]['n_in']
@@ -72,16 +119,38 @@ def parseLayers(x,schema,rng):
                                                    subsample    = currDropoutLayer['subsample'],
                                                    name         = currDropoutLayer.get('name',None)))
             
-        if modelType == 'autoencoder' and i >= nLayers/2:
+        if modelType in ['autoencoder','supervised-autoencoder'] and i >= nLayers/2:
             dropoutLayers[-1].W = dropoutLayers[nLayers-1-i].W.T
 
+        if currDropoutLayer.get('branch'):
+
+            assert currDropoutLayer['branch'][0]['activation'] != 'conv2d'
+
+            branchDropoutLayer = Layer(rng        = rng,
+                                       input      = lastOutput,
+                                       n_in       = lastNOut,
+                                       n_out      = currDropoutLayer['branch'][0]['n_out'],
+                                       activation = activationMap[
+                    currDropoutLayer['branch'][0]['activation'] ],
+                                       randomInit = True,
+                                       dropout    = currDropoutLayer['branch'][0]['dropout'],
+                                       name       = currDropoutLayer['branch'][0].get('name',None))
+            
         lastOutput = dropoutLayers[-1].output
         lastNOut   = dropoutLayers[-1].n_out
 
     lastOutput = x
     lastNOut = schemaLayers[0]['n_in']
 
+    graphHasBranch = False
+    layerHasBranch = False
+
     for i in xrange(nLayers):
+
+        layerHasBranch = (True if schema['graph'][i].get('branch') else False)
+
+        if layerHasBranch:
+            graphHasBranch = True
 
         activationStr = schema['graph'][i]['activation']
 
@@ -100,6 +169,16 @@ def parseLayers(x,schema,rng):
                                  b = currDropoutLayer.b,
                                  dropout = 0) )
 
+            if layerHasBranch:
+                branchLayer = Layer(rng   = rng,
+                                    input = lastOutput,
+                                    n_in  = lastNOut,
+                                    n_out = branchDropoutLayer.n_out,
+                                    activation = branchDropoutLayer.activation,
+                                    W = branchDropoutLayer.W * q,
+                                    b = branchDropoutLayer.b,
+                                    dropout = 0)
+
         else:
 
             layers.append( ConvolutionLayer(rng = rng,
@@ -117,6 +196,10 @@ def parseLayers(x,schema,rng):
         lastOutput = layers[-1].output
         lastNOut   = layers[-1].n_out
         
+    if graphHasBranch:
+        layers.append(branchLayer)
+        dropoutLayers.append(branchDropoutLayer)
+
     return layers,dropoutLayers,modelType
 
 
@@ -160,23 +243,15 @@ class ComputationalGraph(object):
 
         # Parse layers from the schema. Input is needed to clamp
         # it with the first layer
-        self.layers,self.dropoutLayers,modelType = parseLayers(self.input,
-                                                               self.schema,
-                                                               self.rng)
+        self.layers,self.dropoutLayers,modelType = parseLayers(self.input,self.schema,self.rng)
 
         # Get model type
         self.type = modelType
 
-        # Take number of input variables
-        self.n_in = self.layers[0].n_in
-        
         # Collect parameters of all the layers
         self.params = [param for layer in self.dropoutLayers
                        for param in layer.params]
                 
-        # The number of outputs is obtained from the output layer of the graph
-        self.n_out  = self.schema['graph'][-1]['n_out']
-        
         self._setUpOutputs(x)
 
         self._setUpCostFunctions(x,y,L1Reg,L2Reg)
@@ -188,46 +263,59 @@ class ComputationalGraph(object):
 
     def _setUpOutputs(self,x):
 
-        self._supervised_output = None
-        self._unsupervised_output = None
-        self._encode_output = None
+        # We will use these for supervised and unsupervised learning
+        self._supervised_dropout_output = None
+        self._unsupervised_dropout_output = None
 
+        # We will use these for supervised and unsupervised learning
+        self._supervised_output = None
+        self._unsupervised_output = None        
+
+        # We will use these for getting the output
+        self._encode_output = None
+        self._decode_output = None
+
+        # We will make these callable functions
         self.encode = None
+        self.decode = None
         self.predict = None
 
-        for dropoutLayer in self.dropoutLayers:
+        for layer,dropoutLayer in zip(self.layers,self.dropoutLayers):
+
+            # If we find a layer that has supervised cost associated with it,
+            # we will bind the respective output variables to that layer
             if ( self.schema.get('supervised-cost') and 
                  self.schema['supervised-cost']['name'] == dropoutLayer.name ):
-                self._supervised_output = dropoutLayer.output
+                self._supervised_dropout_output = dropoutLayer.output
+                self._supervised_output = layer.output
+                self.predict = theano.function( inputs = [x],
+                                                outputs = T.argmax(self._supervised_output,
+                                                                   axis = 1) )
 
+
+            # If we find a layer that as unsupervised cost associated with it,
+            # we will bind the respective output variables to that layer
             if ( self.schema.get('unsupervised-cost') and 
                  self.schema['unsupervised-cost']['name'] == dropoutLayer.name ):
-                self._unsupervised_output = dropoutLayer.output
+                self._unsupervised_dropout_output = dropoutLayer.output
+                self._unsupervised_output = layer.output
         
-        if self.type == 'classifier':
-        
-            self.predict = theano.function( inputs = [x],
-                                            outputs = T.argmax(self._supervised_output,
-                                                               axis = 1) )
-
-        elif self.type == 'regressor':
-                    
-            self.predict = theano.function( inputs = [x],
-                                            outputs = self._supervised_output )
-
-        elif self.type == 'autoencoder':
-
-            self._encode_output = self.layers[self.encodeLayerIdx()].output
-
-            self.predict = theano.function( inputs = [x],
-                                            outputs = self._unsupervised_output )
-
-            
-            self.encode = theano.function( inputs = [x],
-                                           outputs = self._encode_output )
+            # In case encoder layer has been specified, we will bind 
+            # the output variables to that
+            if layer.name == 'encode-out':
+                self._encode_output = layer.output
+                self.encode = theano.function( inputs = [x],
+                                               outputs = self._encode_output )
 
 
+            # In case decoder layer has been specified, we will bind
+            # the output variables to that
+            if layer.name == 'decode-out':
+                self._decode_output = layer.output
+                self.decode = theano.function( inputs = [x],
+                                               outputs = self._decode_output )
 
+                
     def _setUpCostFunctions(self,x,y,L1Reg,L2Reg):
         
         self.L1norm = T.sum([T.sum(abs(layer.W.flatten())) for layer in self.layers])
@@ -237,17 +325,49 @@ class ComputationalGraph(object):
 
         self._unsupervised_cost = None
         self._supervised_cost = None
+        self._hybrid_cost = None
         
-        if self._supervised_output:
+        if self._supervised_dropout_output:
             cost = costMap[self.schema['supervised-cost']['type']]
-            self._supervised_cost = cost(self._supervised_output,y) + self.reg
+            self._supervised_cost = cost(self._supervised_dropout_output,y) + self.reg
+            self.supervised_cost = theano.function(inputs = [x,y],
+                                                   outputs = self._supervised_cost)
 
-        if self._unsupervised_output:
+        if self._unsupervised_dropout_output:
             cost = costMap[self.schema['unsupervised-cost']['type']]
-            self._unsupervised_cost = cost(self._unsupervised_output,x) + self.reg
+            self._unsupervised_cost = cost(self._unsupervised_dropout_output,x) + self.reg
+            self.unsupervised_cost = theano.function(inputs = [x],
+                                                     outputs = self._unsupervised_cost)
+
     
+        if self._supervised_cost and self._unsupervised_cost:
+            self._hybrid_cost = self._supervised_cost + self._unsupervised_cost
+            self.hybrid_cost = theano.function(inputs = [x,y],
+                                               outputs = self._hybrid_cost)
+
     
     def _setUpOptimizers(self,x,y,learnRate,momentum):
+
+        self.supervised_update = None
+
+        self.unsupervised_update = None
+
+        self.hybrid_update = None
+
+        if self._hybrid_cost:
+
+            self.hybrid_optimizer = MSGD(
+                cost      = self._hybrid_cost,
+                params    = self.params,
+                learnRate = learnRate,
+                momentum  = momentum)
+
+            self.hybrid_update = theano.function(
+                inputs  = [x,y],
+                outputs = self._hybrid_cost,
+                updates = self.hybrid_optimizer.updates)
+
+            return
 
         if self._supervised_cost:
             
@@ -283,11 +403,6 @@ class ComputationalGraph(object):
                 inputs  = [x],
                 outputs = self._unsupervised_cost)
         
-
-
-    def encodeLayerIdx(self):
-        assert self.type == 'autoencoder'
-        return len(self.layers) / 2 - 1
 
     def __str__(self):
 

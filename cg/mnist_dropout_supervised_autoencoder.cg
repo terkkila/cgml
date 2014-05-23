@@ -1,4 +1,8 @@
-description: MNIST digit autoencoder
+description: MNIST supervised digit autoencoder
+
+supervised-cost:
+  type: negative-log-likelihood
+  name: class-out
 
 unsupervised-cost:
   type: squared-error
@@ -17,6 +21,13 @@ graph:
    dropout:    0.0
    name:       encode-out
 
+   branch:
+   - activation: softmax
+     n_in:       2
+     n_out:      10
+     dropout:    0.0
+     name:       class-out
+
  - activation: sigmoid
    n_in:       2
    n_out:      100
@@ -27,5 +38,6 @@ graph:
    n_out:      784
    dropout:    0.0
    name:       decode-out
+
 
 

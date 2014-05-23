@@ -2,6 +2,7 @@ description: MNIST digit classifier MLP
 
 supervised-cost:
   type: negative-log-likelihood
+  name: class-out
 
 graph:
 
@@ -19,3 +20,4 @@ graph:
    n_in:       300
    n_out:      10
    dropout:    0.2
+   name:       class-out

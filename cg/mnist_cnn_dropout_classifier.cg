@@ -19,11 +19,6 @@ graph:
    n_out:      300
    dropout:    0.2
 
- - activation: tanh
-   n_in:       300
-   n_out:      300
-   dropout:    0.2
-
  - activation: softmax
    n_in:       300
    n_out:      10
