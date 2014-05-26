@@ -34,8 +34,6 @@ def test_conv2d():
 
 def test_conv2d_layer():
 
-    rng = np.random.RandomState(0)
-
     schema = {'description':'test CG',
               'supervised-cost': {'type': 'negative-log-likelihood', 
                                   'name': 'class-out'},

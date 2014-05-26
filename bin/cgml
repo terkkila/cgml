@@ -40,6 +40,8 @@ elif args.cg:
                                momentum  = args.momentum,
                                L1Reg = args.L1Reg,
                                L2Reg = args.L2Reg,
+                               supCostWeight = args.supCostWeight,
+                               unsupCostWeight = args.unsupCostWeight,
                                seed = args.seed)
 
 if model.type in ['classifier','supervised-autoencoder']:
@@ -124,6 +126,10 @@ if args.trainData:
 
                 currMeanCost = 0.0
 
+                if args.verbose:
+                    model.summarizeParams()
+
+
         # After each successful pass, rewind the data reader for training
         drTrain.rewind()
 
@@ -170,7 +176,8 @@ if args.testData:
 
             outStream.write( strMat(zip(y_test,
                                         model.predict(x_test),
-                                        model.encode(x_test))) + '\n' )
+                                        model.encode(x_test),
+                                        model.decode(x_test))) + '\n' )
 
 
 

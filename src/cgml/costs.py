@@ -14,13 +14,21 @@ def nllCost(yhat, y):
     return -T.mean(T.log(yhat)[T.arange(y.shape[0]),y])
 
     
-def sqerrCost(yhat, y):
+def sqerrCost_old(yhat, y):
 
     # Error
     e = y - yhat
 
     # Squared error
     return( T.mean(T.diagonal(T.dot(e,e.T))) )
+
+def sqerrCost(yhat, y):
+
+    # Error
+    e = y - yhat
+
+    # Mean of MSEs over 2
+    return( T.mean(T.mean(e*e)) / 2 )
 
 
 def crossEntCost(yhat,y):

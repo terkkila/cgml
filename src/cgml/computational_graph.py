@@ -1,4 +1,5 @@
 
+import sys
 import numpy as np
 import theano
 import theano.tensor as T
@@ -7,6 +8,7 @@ from cgml.activations import activationMap
 from cgml.costs import costMap
 from cgml.optimizers import MSGD
 from cgml.schema import validateSchema
+from cgml.io import ppf
 
 class DAG(object):
 
@@ -102,7 +104,8 @@ def parseLayers(x,schema,rng):
                         currDropoutLayer['activation'] ],
                                         randomInit = True,
                                         dropout    = currDropoutLayer['dropout'],
-                                        name       = currDropoutLayer.get('name',None)) )
+                                        name       = currDropoutLayer.get('name',
+                                                                          "Unnamed")) )
 
         else:
             
@@ -117,10 +120,11 @@ def parseLayers(x,schema,rng):
                                                    n_filters    = currDropoutLayer['n_filters'],
                                                    filter_width = currDropoutLayer['filter_width'],
                                                    subsample    = currDropoutLayer['subsample'],
-                                                   name         = currDropoutLayer.get('name',None)))
+                                                   name         = currDropoutLayer.get('name',
+                                                                                       "Unnamed")))
             
-        if modelType in ['autoencoder','supervised-autoencoder'] and i >= nLayers/2:
-            dropoutLayers[-1].W = dropoutLayers[nLayers-1-i].W.T
+        #if modelType in ['autoencoder','supervised-autoencoder'] and i >= nLayers/2:
+        #    dropoutLayers[-1].W = dropoutLayers[nLayers-1-i].W.T
 
         if currDropoutLayer.get('branch'):
 
@@ -218,7 +222,9 @@ class ComputationalGraph(object):
                  momentum = None,
                  L1Reg = 0.0,
                  L2Reg = 0.0,
-                 seed = None):
+                 seed = None,
+                 supCostWeight = 1,
+                 unsupCostWeight = 1):
 
         # Run schema validator before we do anything
         validateSchema(schema)
@@ -257,7 +263,7 @@ class ComputationalGraph(object):
                 
         self._setUpOutputs(x)
 
-        self._setUpCostFunctions(x,y,L1Reg,L2Reg)
+        self._setUpCostFunctions(x,y,L1Reg,L2Reg,supCostWeight,unsupCostWeight)
 
         self._setUpOptimizers(x,y,learnRate,momentum)
 
@@ -319,7 +325,13 @@ class ComputationalGraph(object):
                                                outputs = self._decode_output )
 
                 
-    def _setUpCostFunctions(self,x,y,L1Reg,L2Reg):
+    def _setUpCostFunctions(self,
+                            x,
+                            y,
+                            L1Reg,
+                            L2Reg,
+                            supCostWeight,
+                            unsupCostWeight):
         
         self.L1norm = T.sum([T.sum(abs(layer.W.flatten())) for layer in self.layers])
         self.L2norm = T.sum([T.sum(layer.W.flatten() ** 2) for layer in self.layers])
@@ -332,13 +344,15 @@ class ComputationalGraph(object):
         
         if self._supervised_dropout_output:
             cost = costMap[self.schema['supervised-cost']['type']]
-            self._supervised_cost = cost(self._supervised_dropout_output,y) + self.reg
+            self._supervised_cost = supCostWeight * cost(self._supervised_dropout_output,y) + \
+                self.reg
             self.supervised_cost = theano.function(inputs = [x,y],
                                                    outputs = self._supervised_cost)
 
         if self._unsupervised_dropout_output:
             cost = costMap[self.schema['unsupervised-cost']['type']]
-            self._unsupervised_cost = cost(self._unsupervised_dropout_output,x) + self.reg
+            self._unsupervised_cost = unsupCostWeight * cost(self._unsupervised_dropout_output,x) + \
+                self.reg
             self.unsupervised_cost = theano.function(inputs = [x],
                                                      outputs = self._unsupervised_cost)
 
@@ -405,7 +419,21 @@ class ComputationalGraph(object):
             self.unsupervised_cost = theano.function(
                 inputs  = [x],
                 outputs = self._unsupervised_cost)
-        
+
+    def summarizeParams(self):
+
+        for layer in self.layers:
+            name = layer.name
+            W,b = layer.weights()
+
+            sys.stdout.write("{mean,min,max}(W),{mean,min,max}(b) = " + 
+                             ', '.join(map(ppf,[np.mean(abs(W.flatten())),
+                                               np.min(W.flatten()),
+                                               np.max(W.flatten()),
+                                               np.mean(abs(b.flatten())),
+                                               np.min(b.flatten()),
+                                               np.max(b.flatten())])) + " (" + name + ")\n")
+            
 
     def __str__(self):
 

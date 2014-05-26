@@ -12,31 +12,41 @@ graph:
 
  - activation: sigmoid
    n_in:       784
-   n_out:      300
-   dropout:    0.0
+   n_out:      100
+   dropout:    0.2
 
  - activation: sigmoid
-   n_in:       300
+   n_in:       100
+   n_out:      10
+   dropout:    0.2
+
+ - activation: sigmoid
+   n_in:       10
    n_out:      2
-   dropout:    0.0
+   dropout:    0.2
    name:       encode-out
 
    branch:
    - activation: softmax
      n_in:       2
      n_out:      10
-     dropout:    0.0
+     dropout:    0.2
      name:       class-out
 
  - activation: sigmoid
    n_in:       2
-   n_out:      300
-   dropout:    0.0
+   n_out:      10
+   dropout:    0.2
 
  - activation: sigmoid
-   n_in:       300
+   n_in:       10
+   n_out:      100
+   dropout:    0.2
+
+ - activation: sigmoid
+   n_in:       100
    n_out:      784
-   dropout:    0.0
+   dropout:    0.2
    name:       decode-out
 
 

@@ -9,6 +9,11 @@ def readData(fileName):
     y = yx[range(yx.shape[0]),0]
 
     return x,y
+
+def ppf(x):
+    if x < 0:
+        return '{0:.3f}'.format(x)
+    return ' {0:.3f}'.format(x)
     
 class DataReader(object):
 

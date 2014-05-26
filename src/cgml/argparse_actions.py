@@ -4,6 +4,15 @@ import argparse,random
 def giveArgs(log = None):
 
     parser = argparse.ArgumentParser( description = 'Machine Learning with Computational Graphs.')
+
+    parser.add_argument(
+        '--verbose',
+        help     = 'Print extra information?',
+        dest     = 'verbose',
+        default  = False,
+        action = 'store_true',
+        required = False)
+
     
     parser.add_argument(
         '--seed',
@@ -79,6 +88,22 @@ def giveArgs(log = None):
         required = False)
 
     parser.add_argument(
+        '--supCostWeight',
+        help = 'How much weight is given to supervised cost',
+        type = float,
+        dest = 'supCostWeight',
+        default = 1.0,
+        required = False)
+
+    parser.add_argument(
+        '--unsupCostWeight',
+        help = 'How much weight is given to unsupervised cost',
+        type = float,
+        dest = 'unsupCostWeight',
+        default = 1.0,
+        required = False)
+
+    parser.add_argument(
         '--nPasses',
         help = 'How many passes through the data we go',
         type = int,
@@ -119,20 +144,23 @@ def giveArgs(log = None):
     if log:
 
         log.write('\nParsed the following arguments:\n')
-        log.write(' --seed      ' + str(args.seed)       + '\n')
-        log.write(' --cg        ' + str(args.cg)         + '\n')
-        log.write(' --trainData ' + str(args.trainData)  + '\n')
-        log.write(' --validData ' + str(args.validData)  + '\n')
-        log.write(' --testData  ' + str(args.testData)   + '\n')
-        log.write(' --learnRate ' + str(args.learnRate)  + '\n')
-        log.write(' --momentum  ' + str(args.momentum)   + '\n')
-        log.write(' --L1Reg     ' + str(args.L1Reg)      + '\n')
-        log.write(' --L2Reg     ' + str(args.L2Reg)      + '\n')
-        log.write(' --batchSize ' + str(args.batchSize)  + '\n')
-        log.write(' --nPasses   ' + str(args.nPasses)    + '\n')
-        log.write(' --log       ' + str(args.log)        + '\n')
-        log.write(' --save      ' + str(args.save)       + '\n')
-        log.write(' --load      ' + str(args.load)       + '\n')
+        log.write(' --verbose         ' + str(args.verbose)         + '\n')
+        log.write(' --seed            ' + str(args.seed)            + '\n')
+        log.write(' --cg              ' + str(args.cg)              + '\n')
+        log.write(' --trainData       ' + str(args.trainData)       + '\n')
+        log.write(' --validData       ' + str(args.validData)       + '\n')
+        log.write(' --testData        ' + str(args.testData)        + '\n')
+        log.write(' --learnRate       ' + str(args.learnRate)       + '\n')
+        log.write(' --momentum        ' + str(args.momentum)        + '\n')
+        log.write(' --L1Reg           ' + str(args.L1Reg)           + '\n')
+        log.write(' --L2Reg           ' + str(args.L2Reg)           + '\n')
+        log.write(' --supCostWeight   ' + str(args.supCostWeight)   + '\n')
+        log.write(' --unsupCostWeight ' + str(args.unsupCostWeight) + '\n')
+        log.write(' --batchSize       ' + str(args.batchSize)       + '\n')
+        log.write(' --nPasses         ' + str(args.nPasses)         + '\n')
+        log.write(' --log             ' + str(args.log)             + '\n')
+        log.write(' --save            ' + str(args.save)            + '\n')
+        log.write(' --load            ' + str(args.load)            + '\n')
 
     if not args.cg and not args.load:
         raise Exception("You must provide either a Computational Graph schema file (--cg) " + 
