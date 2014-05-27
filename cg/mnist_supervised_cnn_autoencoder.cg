@@ -19,7 +19,7 @@ graph:
    dropout:      0.2
 
  - activation: sigmoid
-   n_in:       576
+   n_in:       574
    n_out:      10
    dropout:    0.2
 

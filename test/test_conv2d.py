@@ -52,3 +52,5 @@ def test_conv2d_layer():
                                learnRate = 0.01,
                                momentum = 0.0,
                                seed = 0)
+
+    model.supervised_update([[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16]],[0])

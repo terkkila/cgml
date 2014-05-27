@@ -9,8 +9,6 @@ from cgml.costs import costMap
 from cgml.optimizers import MSGD
 from cgml.schema import validateSchema
 from cgml.io import ppf
-from cgml.data import makeSquareImagesFromVectors
-from cgml.data import makeVectorsFromSquareImages
 
 class DAG(object):
 
@@ -91,7 +89,9 @@ def makeDropoutLayersFromSchema(x,schema,rng):
 
         currDropoutLayer = schema['graph'][i]
 
-        if currDropoutLayer['activation'] != 'conv2d':
+        isCurrConvLayer = currDropoutLayer['activation'] == 'conv2d'
+
+        if not isCurrConvLayer:
             
             dropoutLayers.append( Layer(rng        = rng,
                                         input      = lastOutput,
@@ -104,12 +104,8 @@ def makeDropoutLayersFromSchema(x,schema,rng):
                                         name       = currDropoutLayer.get('name',
                                                                           "Unnamed")) )
             
-            lastOutput = dropoutLayers[-1].output
-            lastNOut   = dropoutLayers[-1].n_out
-
-        else:
             
-            lastOutput = makeSquareImagesFromVectors(lastOutput)
+        else:
 
             dropoutLayers.append( ConvolutionLayer(rng          = rng,
                                                    input        = lastOutput,
@@ -125,12 +121,8 @@ def makeDropoutLayersFromSchema(x,schema,rng):
                                                    name         = currDropoutLayer.get('name',
                                                                                        "Unnamed")))
 
-            sys.stdout.write("!!NOTE: Assuming only one convolution layer, "+
-                             "thus the output of conv2d is flattened!!\n")
-
-            lastOutput = makeVectorsFromSquareImages(dropoutLayers[-1].output)
-            lastNOut   = np.prod(dropoutLayers[-1].n_out)
-
+        lastOutput = dropoutLayers[-1].output
+        lastNOut   = dropoutLayers[-1].n_out
 
         if currDropoutLayer.get('branch'):
 
@@ -167,6 +159,7 @@ def makeLayersFromDropoutLayers(x,
 
     for i in xrange(nLayers):
 
+        
         layerHasBranch = (True if schema['graph'][i].get('branch') else False)
 
         if layerHasBranch:
@@ -175,10 +168,12 @@ def makeLayersFromDropoutLayers(x,
         activationStr = schema['graph'][i]['activation']
 
         currDropoutLayer = dropoutLayers[i]
+
+        isCurrConvLayer = schema['graph'][i]['activation'] == 'conv2d'
         
         q = 1 - currDropoutLayer.dropout
         
-        if activationStr != 'conv2d':
+        if not isCurrConvLayer:
             
             layers.append( Layer(rng = None,
                                  input = lastOutput,
@@ -201,12 +196,10 @@ def makeLayersFromDropoutLayers(x,
                                     dropout = 0,
                                     name = branchDropoutLayer.name)
 
-            lastOutput = layers[-1].output
-            lastNOut   = layers[-1].n_out
-
+            
         else:
 
-            lastOutput = makeSquareImagesFromVectors(lastOutput)
+            #lastOutput = makeSquareImagesFromVectors(lastOutput)
 
             layers.append( ConvolutionLayer(rng = None,
                                             input = lastOutput,
@@ -220,8 +213,12 @@ def makeLayersFromDropoutLayers(x,
                                             subsample = currDropoutLayer.subsample,
                                             name = currDropoutLayer.name) )
             
-            lastOutput = makeVectorsFromSquareImages(dropoutLayers[-1].output)
-            lastNOut   = np.prod(dropoutLayers[-1].n_out)
+            #lastOutput = makeVectorsFromSquareImages(dropoutLayers[-1].output)
+            #lastNOut   = np.prod(dropoutLayers[-1].n_out)
+
+        lastOutput = layers[-1].output
+        lastNOut   = layers[-1].n_out
+
 
  
     return layers,branchLayer

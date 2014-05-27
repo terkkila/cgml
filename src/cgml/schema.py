@@ -55,6 +55,9 @@ def validateConvolutionLayer(layer):
         raise Exception(whenConv+", 2st output dimensions should be "+
                         "'(n_in - filter_width + 1)/subsample'")
 
+    if layer.get('branch'):
+        raise Exception(whenConv+", 'branch' cannot be set")
+
 
 def validateRegularLayer(layer):
 
@@ -101,6 +104,8 @@ def validateSchema(schema):
     if nLayers == 0:
         raise Exception("Graph in schema has no layers")
 
+    convLayers = []
+
     for i,layer in zip(xrange(nLayers),schema['graph']):
 
         if not layer.get('n_in'):
@@ -118,8 +123,14 @@ def validateSchema(schema):
                             str(activationMap.keys()))
 
         if layer['activation'] == 'conv2d':
+            convLayers.append(True)
+            if convLayers[0] == False:
+                raise Exception("Convolution layers must start from the beginning")
+            if i > 0 and convLayers[i-1] == False:
+                raise Exception("Convolution layers must be following each other")
             validateConvolutionLayer(layer)
         else:
+            convLayers.append(False)
             validateRegularLayer(layer)
 
         if layer.get('dropout') == None:

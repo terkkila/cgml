@@ -1,4 +1,5 @@
 
+import numpy as np
 import theano
 import theano.tensor as T
 import theano.tensor.shared_randomstreams
@@ -6,6 +7,8 @@ from cgml.data import makeShared
 from cgml.data import makeWeightMatrix
 from cgml.data import makeBiasVector
 from cgml.data import makeConvolutionFilters
+from cgml.data import makeSquareImagesFromVectors
+from cgml.data import makeVectorsFromSquareImages
 
 def _dropout_from_layer_input(input = None,
                               p     = None,
@@ -40,6 +43,11 @@ class Layer(object):
         self.name = name
 
         self.dropout = dropout
+
+        # If the layer is given an image
+        if input.ndim == 4:
+            input = makeVectorsFromSquareImages(input)
+            n_in = np.prod(n_in)
 
         # If dropout is positive, apply it to the input
         if dropout > 0:
@@ -110,6 +118,9 @@ class ConvolutionLayer(object):
         
         self.dropout = dropout
 
+        if input.ndim == 2:
+            input = makeSquareImagesFromVectors(input)
+
         # If dropout is positive, apply it to the input
         if dropout > 0:
 
@@ -138,6 +149,8 @@ class ConvolutionLayer(object):
         else:
             self.W = W
         
+
+        assert self.input.ndim == 4
 
         # Output of the 2D convolution is a 4D tensor
         self.output = self.activation(self.input,
