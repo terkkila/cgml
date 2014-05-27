@@ -2,6 +2,20 @@
 import numpy as np
 import theano
 import theano.tensor as T
+
+def makeSquareImagesFromVectors(x):
+
+    return T.reshape(x,(x.shape[0],
+                        1,
+                        T.cast(T.sqrt(x.shape[1]),'int32'),
+                        T.cast(T.sqrt(x.shape[1]),'int32')))
+
+
+def makeVectorsFromSquareImages(x):
+
+    return T.reshape(x,(x.shape[0],
+                        T.prod(x.shape[1:])))
+
     
 def makeShared(data, borrow = True, name = None):
     """ Function that loads the dataset into shared variables
@@ -62,11 +76,11 @@ def makeConvolutionFilters(rng = None,
     
     for i in xrange(n_filters):
         W_values.append( makeWeightMatrix(rng = rng,
-                                          n_in = filter_width,
-                                          n_out = filter_width,
+                                          n_in = filter_width[0],
+                                          n_out = filter_width[1],
                                           randomInit = randomInit) )
     
-    return np.asarray(W_values).reshape((n_filters,1,filter_width,filter_width))
+    return np.asarray(W_values).reshape((n_filters,1,filter_width[0],filter_width[0]))
 
 
 def makeBiasVector(rng        = None,

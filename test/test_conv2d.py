@@ -40,10 +40,10 @@ def test_conv2d_layer():
               'graph':
                   [{'activation':'conv2d',
                     'n_filters':2,
-                    'filter_width':3,
+                    'filter_width':[3,3],
                     'subsample':[1,1],
-                    'n_in':16,
-                    'n_out':8,
+                    'n_in':[1,4,4],
+                    'n_out':[2,2,2],
                     'dropout':0.0},
                    {'activation':'sigmoid',
                     'n_in':8,

@@ -2,7 +2,10 @@
 import theano
 import theano.tensor as T
 import theano.tensor.shared_randomstreams
-from data import makeShared, makeWeightMatrix, makeBiasVector, makeConvolutionFilters
+from cgml.data import makeShared
+from cgml.data import makeWeightMatrix
+from cgml.data import makeBiasVector
+from cgml.data import makeConvolutionFilters
 
 def _dropout_from_layer_input(input = None,
                               p     = None,
@@ -137,20 +140,13 @@ class ConvolutionLayer(object):
         
 
         # Output of the 2D convolution is a 4D tensor
-        self.output_im = self.activation(T.reshape(self.input,
-                                                   (self.input.shape[0],
-                                                    1,
-                                                    T.cast(T.sqrt(self.input.shape[1]),
-                                                           'int32'),
-                                                    T.cast(T.sqrt(self.input.shape[1]),
-                                                           'int32'))),
-                                         self.W,
-                                         subsample = self.subsample )
+        self.output = self.activation(self.input,
+                                      self.W,
+                                      subsample = self.subsample )
         
 
         # Turn the 4D tensor output back to a 2D matrix
-        self.output = T.reshape(self.output_im,(self.output_im.shape[0],
-                                                T.prod(self.output_im.shape[1:])))
+        #self.output = makeVectorsFromSquareImages(self.output_im)
 
         self.params = [self.W]
 

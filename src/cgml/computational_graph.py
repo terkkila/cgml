@@ -9,6 +9,8 @@ from cgml.costs import costMap
 from cgml.optimizers import MSGD
 from cgml.schema import validateSchema
 from cgml.io import ppf
+from cgml.data import makeSquareImagesFromVectors
+from cgml.data import makeVectorsFromSquareImages
 
 class DAG(object):
 
@@ -46,6 +48,32 @@ class DAG(object):
         return self.nodes[ self.name2idx[name] ]
 
         
+
+def getModelTypeFromSchema(schema):
+    
+    if schema.get('unsupervised-cost') and schema.get('supervised-cost'):
+        
+        sys.stdout.write("!!NOTE: temporarily assuming that graph having hybrid cost "+
+                         "is a supervised autoencoder!!\n")
+        
+        modelType = 'supervised-autoencoder'
+        
+    elif schema.get('unsupervised-cost'):
+        
+        modelType = 'autoencoder'
+        
+        sys.stdout.write("!!NOTE: temporarily assuming that graph having unsupervised cost "+
+                         "is an autoencoder!!\n")
+        
+    elif schema.get('supervised-cost'):
+        
+        sys.stdout.write("!!NOTE: temporarily assuming that graph having supervised cost "+
+                         "is a classifier!!\n")
+        
+        modelType = 'classifier'
+        
+
+    return modelType
         
 
 def parseLayers(x,schema,rng):
@@ -54,31 +82,7 @@ def parseLayers(x,schema,rng):
 
     nLayers = len(schemaLayers)
 
-    if schema.get('unsupervised-cost') and schema.get('supervised-cost'):
-        
-        print "!!NOTE: temporarily assuming that graph having hybrid cost is a supervised autoencoder!!"
-        
-        modelType = 'supervised-autoencoder'
-
-    elif schema.get('unsupervised-cost'):
-
-        modelType = 'autoencoder'
-
-        print "!!NOTE: temporarily assuming that graph having unsupervised cost is an autoencoder!!"
-
-        if nLayers % 2 != 0:
-            raise Exception("Autoencoder graph must have even number of layers")
-        
-        for i in xrange(nLayers/2):
-            if schemaLayers[i]['n_in'] != schemaLayers[nLayers - 1 - i]['n_out']:
-                raise Exception("Autoencoder graph must be symmetric")
-
-    elif schema.get('supervised-cost'):
-
-        print "!!NOTE: temporarily assuming that graph having supervised cost is a classifier!!"
-
-        modelType = 'classifier'
-
+    modelType = getModelTypeFromSchema(schema)
 
     # Layers of the graph
     dropoutLayers = []
@@ -106,9 +110,14 @@ def parseLayers(x,schema,rng):
                                         dropout    = currDropoutLayer['dropout'],
                                         name       = currDropoutLayer.get('name',
                                                                           "Unnamed")) )
+            
+            lastOutput = dropoutLayers[-1].output
+            lastNOut   = dropoutLayers[-1].n_out
 
         else:
             
+            lastOutput = makeSquareImagesFromVectors(lastOutput)
+
             dropoutLayers.append( ConvolutionLayer(rng          = rng,
                                                    input        = lastOutput,
                                                    n_in         = lastNOut,
@@ -122,9 +131,13 @@ def parseLayers(x,schema,rng):
                                                    subsample    = currDropoutLayer['subsample'],
                                                    name         = currDropoutLayer.get('name',
                                                                                        "Unnamed")))
-            
-        #if modelType in ['autoencoder','supervised-autoencoder'] and i >= nLayers/2:
-        #    dropoutLayers[-1].W = dropoutLayers[nLayers-1-i].W.T
+
+            sys.stdout.write("!!NOTE: Assuming only one convolution layer, "+
+                             "thus the output of conv2d is flattened!!\n")
+
+            lastOutput = makeVectorsFromSquareImages(dropoutLayers[-1].output)
+            lastNOut   = np.prod(dropoutLayers[-1].n_out)
+
 
         if currDropoutLayer.get('branch'):
 
@@ -140,8 +153,6 @@ def parseLayers(x,schema,rng):
                                        dropout    = currDropoutLayer['branch'][0]['dropout'],
                                        name       = currDropoutLayer['branch'][0].get('name',None))
             
-        lastOutput = dropoutLayers[-1].output
-        lastNOut   = dropoutLayers[-1].n_out
 
     lastOutput = x
     lastNOut = schemaLayers[0]['n_in']
@@ -185,7 +196,12 @@ def parseLayers(x,schema,rng):
                                     dropout = 0,
                                     name = branchDropoutLayer.name)
 
+            lastOutput = layers[-1].output
+            lastNOut   = layers[-1].n_out
+
         else:
+
+            lastOutput = makeSquareImagesFromVectors(lastOutput)
 
             layers.append( ConvolutionLayer(rng = rng,
                                             input = lastOutput,
@@ -198,10 +214,12 @@ def parseLayers(x,schema,rng):
                                             filter_width = currDropoutLayer.filter_width,
                                             subsample = currDropoutLayer.subsample,
                                             name = currDropoutLayer.name) )
+            
+            lastOutput = makeVectorsFromSquareImages(dropoutLayers[-1].output)
+            lastNOut   = np.prod(dropoutLayers[-1].n_out)
 
+ 
 
-        lastOutput = layers[-1].output
-        lastNOut   = layers[-1].n_out
         
     if graphHasBranch:
         layers.append(branchLayer)
