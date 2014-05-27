@@ -3,6 +3,7 @@ import theano
 import theano.tensor as T
 import numpy as np
 from cgml.computational_graph import ComputationalGraph
+from cgml.data import makeSquareImagesFromVectors
 
 def test_conv2d():
 
@@ -10,11 +11,7 @@ def test_conv2d():
     filters_sym = T.tensor4('filters_sym')
 
     f = theano.function( inputs = [x2_sym,filters_sym],
-                         outputs = T.nnet.conv2d(T.reshape(x2_sym,
-                                                           (x2_sym.shape[0],
-                                                            1,
-                                                            T.cast(T.sqrt(x2_sym.shape[1]),'int32'),
-                                                            T.cast(T.sqrt(x2_sym.shape[1]),'int32'))),
+                         outputs = T.nnet.conv2d(makeSquareImagesFromVectors(x2_sym),
                                                  filters_sym,
                                                  border_mode = 'valid'))
 

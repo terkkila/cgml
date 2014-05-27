@@ -74,22 +74,15 @@ def getModelTypeFromSchema(schema):
         
 
     return modelType
-        
 
-def parseLayers(x,schema,rng):
+def makeDropoutLayersFromSchema(x,schema,rng):
 
     schemaLayers = schema['graph']
 
     nLayers = len(schemaLayers)
 
-    modelType = getModelTypeFromSchema(schema)
-
-    # Layers of the graph
     dropoutLayers = []
-    layers = []
-
     branchDropoutLayer = None
-    branchLayer = None
     
     lastOutput = x
     lastNOut = schemaLayers[0]['n_in']
@@ -152,10 +145,22 @@ def parseLayers(x,schema,rng):
                                        randomInit = True,
                                        dropout    = currDropoutLayer['branch'][0]['dropout'],
                                        name       = currDropoutLayer['branch'][0].get('name',None))
-            
+
+    return dropoutLayers,branchDropoutLayer
+
+
+def makeLayersFromDropoutLayers(x,
+                                schema,
+                                dropoutLayers,
+                                branchDropoutLayer):
+
+    nLayers = len(dropoutLayers)
+
+    layers = []
+    branchLayer = None
 
     lastOutput = x
-    lastNOut = schemaLayers[0]['n_in']
+    lastNOut = dropoutLayers[0].n_in
 
     graphHasBranch = False
     layerHasBranch = False
@@ -175,7 +180,7 @@ def parseLayers(x,schema,rng):
         
         if activationStr != 'conv2d':
             
-            layers.append( Layer(rng = rng,
+            layers.append( Layer(rng = None,
                                  input = lastOutput,
                                  n_in  = lastNOut,
                                  n_out = currDropoutLayer.n_out,
@@ -186,7 +191,7 @@ def parseLayers(x,schema,rng):
                                  name = currDropoutLayer.name) )
 
             if layerHasBranch:
-                branchLayer = Layer(rng   = rng,
+                branchLayer = Layer(rng   = None,
                                     input = lastOutput,
                                     n_in  = lastNOut,
                                     n_out = branchDropoutLayer.n_out,
@@ -203,7 +208,7 @@ def parseLayers(x,schema,rng):
 
             lastOutput = makeSquareImagesFromVectors(lastOutput)
 
-            layers.append( ConvolutionLayer(rng = rng,
+            layers.append( ConvolutionLayer(rng = None,
                                             input = lastOutput,
                                             n_in  = lastNOut,
                                             n_out = currDropoutLayer.n_out,
@@ -219,9 +224,24 @@ def parseLayers(x,schema,rng):
             lastNOut   = np.prod(dropoutLayers[-1].n_out)
 
  
-
+    return layers,branchLayer
         
-    if graphHasBranch:
+
+def parseGraphFromSchema(x,schema,rng):
+
+    modelType = getModelTypeFromSchema(schema)
+
+    dropoutLayers,branchDropoutLayer = makeDropoutLayersFromSchema(x,
+                                                                   schema,
+                                                                   rng)
+
+    layers,branchLayer = makeLayersFromDropoutLayers(x,
+                                                     schema,
+                                                     dropoutLayers,
+                                                     branchDropoutLayer)
+    
+    if ( branchDropoutLayer != None and 
+         branchLayer != None ):
         layers.append(branchLayer)
         dropoutLayers.append(branchDropoutLayer)
 
@@ -270,7 +290,9 @@ class ComputationalGraph(object):
 
         # Parse layers from the schema. Input is needed to clamp
         # it with the first layer
-        self.layers,self.dropoutLayers,modelType = parseLayers(self.input,self.schema,self.rng)
+        self.layers,self.dropoutLayers,modelType = parseGraphFromSchema(self.input,
+                                                                        self.schema,
+                                                                        self.rng)
 
         # Get model type
         self.type = modelType
