@@ -4,16 +4,20 @@ import theano.tensor as T
 import numpy as np
 from cgml.computational_graph import ComputationalGraph
 from cgml.data import makeSquareImagesFromVectors
+from cgml.layers import ConvolutionLayer
 
 def test_conv2d():
 
     x2_sym = T.dmatrix('x2')
-    filters_sym = T.tensor4('filters_sym')
+    filters_sym = T.tensor4('filters1_sym')
 
-    f = theano.function( inputs = [x2_sym,filters_sym],
-                         outputs = T.nnet.conv2d(makeSquareImagesFromVectors(x2_sym),
-                                                 filters_sym,
-                                                 border_mode = 'valid'))
+    f_sym = T.nnet.conv2d(makeSquareImagesFromVectors(x2_sym),
+                          filters_sym,
+                          border_mode = 'valid')
+
+    
+    f = theano.function( inputs  = [x2_sym,filters_sym],
+                         outputs = f_sym)
 
     X = np.asarray([[1,2,3,4,5,6,7,8,9],[10,11,12,13,14,15,16,17,18]])
 
@@ -29,22 +33,69 @@ def test_conv2d():
     assert Y[0][1][0][0] == 10
     assert Y[1][1][0][0] == 28
 
-def test_conv2d_layer():
+
+def test_conv2d_layers():
+
+    rng = np.random.RandomState(1234)
+
+    x_sym = T.dmatrix('x_sym')
+
+    cl1 = ConvolutionLayer(input = x_sym,
+                           activation = T.nnet.conv2d,
+                           rng = rng,
+                           filter_width = [2,2],
+                           subsample = [1,1],
+                           n_in = [1,4,4],
+                           n_out = [2,3,3],
+                           dropout = 0.0,
+                           name = 'cl1')
+
+    cl2 = ConvolutionLayer(input = cl1.output,
+                           activation = T.nnet.conv2d,
+                           rng = rng,
+                           filter_width = [3,3],
+                           subsample = [1,1],
+                           n_in = [2,3,3],
+                           n_out = [2,1,1],
+                           dropout = 0.0,
+                           name = 'cl2')
+
+    out1 = theano.function(inputs = [x_sym],
+                           outputs = cl1.output)
+    
+    out2 = theano.function(inputs = [x_sym],
+                           outputs = cl2.output)
+
+    x = np.asarray([[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16]])
+
+    print out1(x).shape
+    assert out1(x).shape == (1,2,3,3)
+
+    print out2(x).shape
+    assert out2(x).shape == (1,2,1,1)
+
+    
+def test_conv2d_graph():
 
     schema = {'description':'test CG',
               'supervised-cost': {'type': 'negative-log-likelihood', 
                                   'name': 'class-out'},
               'graph':
                   [{'activation':'conv2d',
-                    'n_filters':2,
-                    'filter_width':[3,3],
+                    'filter_width':[2,2],
                     'subsample':[1,1],
                     'n_in':[1,4,4],
-                    'n_out':[2,2,2],
+                    'n_out':[2,3,3],
+                    'dropout':0.0},
+                   {'activation':'conv2d',
+                    'filter_width':[3,3],
+                    'subsample':[1,1],
+                    'n_in':[2,3,3],
+                    'n_out':[2,1,1],
                     'dropout':0.0},
                    {'activation':'sigmoid',
-                    'n_in':8,
-                    'n_out':3,
+                    'n_in':2,
+                    'n_out':2,
                     'dropout':0.0,
                     'name':'class-out'}]}
      
@@ -52,5 +103,7 @@ def test_conv2d_layer():
                                learnRate = 0.01,
                                momentum = 0.0,
                                seed = 0)
+
+    y_hat = model.predict([[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16]])
 
     model.supervised_update([[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16]],[0])

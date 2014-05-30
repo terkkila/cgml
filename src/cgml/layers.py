@@ -98,6 +98,11 @@ class Layer(object):
         self.weights = theano.function( inputs = [],
                                         outputs = (self.W,self.b) )
 
+        print self.name + ": " + str(self.n_in) + ' ' + str(self.n_out) + ' ' + \
+            str(self.input.ndim) + ' ' + str(self.output.ndim)
+        
+
+
 class ConvolutionLayer(object):
 
     def __init__(self,
@@ -109,7 +114,6 @@ class ConvolutionLayer(object):
                  randomInit = True,
                  W = None,
                  dropout = 0,
-                 n_filters = None,
                  filter_width = 0,
                  subsample = None,
                  name = None):
@@ -135,14 +139,14 @@ class ConvolutionLayer(object):
         self.n_out = n_out
         self.activation = activation
 
-        self.n_filters = n_filters
         self.filter_width = filter_width
         self.subsample = subsample
 
         # Create W if not given
         if not W:
             self.W = makeShared(makeConvolutionFilters(rng = rng,
-                                                       n_filters = n_filters,
+                                                       n_filters_in = n_in[0],
+                                                       n_filters_out = n_out[0],
                                                        filter_width = filter_width,
                                                        randomInit = randomInit),
                                 name = 'W')
@@ -158,15 +162,13 @@ class ConvolutionLayer(object):
                                       subsample = self.subsample )
         
 
-        # Turn the 4D tensor output back to a 2D matrix
-        #self.output = makeVectorsFromSquareImages(self.output_im)
-
         self.params = [self.W]
 
         self.weights = theano.function( inputs = [],
                                         outputs = self.W )
 
-
+        print self.name + ": " + str(self.n_in) + ' ' + str(self.n_out) + ' ' + \
+            str(self.input.ndim) + ' ' + str(self.output.ndim)
         
 
         

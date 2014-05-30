@@ -7,12 +7,11 @@ supervised-cost:
 graph:
 
  - activation:   conv2d
-   n_in:         784
-   n_filters:    2
-   filter_width: 5
+   n_in:         [1,28,28]
+   filter_width: [5,5]
    subsample:    [2,2]
-   n_out:        288
-   dropout:      0.5
+   n_out:        [2,12,12]
+   dropout:      0.2
 
  - activation: tanh
    n_in:       288

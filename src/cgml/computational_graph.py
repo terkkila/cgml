@@ -115,14 +115,10 @@ def makeDropoutLayersFromSchema(x,schema,rng):
                         currDropoutLayer['activation'] ],
                                                    randomInit   = True,
                                                    dropout      = currDropoutLayer['dropout'],
-                                                   n_filters    = currDropoutLayer['n_filters'],
                                                    filter_width = currDropoutLayer['filter_width'],
                                                    subsample    = currDropoutLayer['subsample'],
                                                    name         = currDropoutLayer.get('name',
                                                                                        "Unnamed")))
-
-        lastOutput = dropoutLayers[-1].output
-        lastNOut   = dropoutLayers[-1].n_out
 
         if currDropoutLayer.get('branch'):
 
@@ -136,7 +132,11 @@ def makeDropoutLayersFromSchema(x,schema,rng):
                     currDropoutLayer['branch'][0]['activation'] ],
                                        randomInit = True,
                                        dropout    = currDropoutLayer['branch'][0]['dropout'],
-                                       name       = currDropoutLayer['branch'][0].get('name',None))
+                                       name       = currDropoutLayer['branch'][0].get('name',
+                                                                                      "Unnamed"))
+
+        lastOutput = dropoutLayers[-1].output
+        lastNOut   = dropoutLayers[-1].n_out
 
     return dropoutLayers,branchDropoutLayer
 
@@ -199,8 +199,6 @@ def makeLayersFromDropoutLayers(x,
             
         else:
 
-            #lastOutput = makeSquareImagesFromVectors(lastOutput)
-
             layers.append( ConvolutionLayer(rng = None,
                                             input = lastOutput,
                                             n_in  = lastNOut,
@@ -208,18 +206,12 @@ def makeLayersFromDropoutLayers(x,
                                             activation = currDropoutLayer.activation,
                                             W = currDropoutLayer.W * q,
                                             dropout = 0,
-                                            n_filters = currDropoutLayer.n_filters,
                                             filter_width = currDropoutLayer.filter_width,
                                             subsample = currDropoutLayer.subsample,
                                             name = currDropoutLayer.name) )
             
-            #lastOutput = makeVectorsFromSquareImages(dropoutLayers[-1].output)
-            #lastNOut   = np.prod(dropoutLayers[-1].n_out)
-
         lastOutput = layers[-1].output
         lastNOut   = layers[-1].n_out
-
-
  
     return layers,branchLayer
         

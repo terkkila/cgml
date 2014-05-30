@@ -8,10 +8,6 @@ def validateConvolutionLayer(layer):
 
     whenConv = "When using activation 'conv2d'"
     
-    if not layer.get('n_filters'):
-        raise Exception(whenConv+", the number of filters 'n_filters' " +
-                        "needs to be specified")
-    
     if not layer.get('filter_width'):
         raise Exception(whenConv+", the filter dimensionality 'filter_width' " +
                         "needs to be specified")
@@ -24,7 +20,7 @@ def validateConvolutionLayer(layer):
     if ( type(layer['n_in']) != list or
          len(layer['n_in']) != 3 ):
         raise Exception(whenConv+", 'n_in' must be a list with three integers: "+
-                        "number of channels and x- and y- dimensions")
+                        "number of filters and x- and y- dimensions")
     
     if not layer.get('subsample'):
         raise Exception(whenConv+", 'subsample' needs to be specified")
@@ -39,11 +35,7 @@ def validateConvolutionLayer(layer):
     if ( type(layer['n_out']) != list or
          len(layer['n_out']) != 3 ):
         raise Exception(whenConv+", 'n_out' must be a list with three integers: "+
-                        "number of channels and x- and y- dimensions")
-
-    if layer['n_out'][0] != layer['n_filters']*layer['n_in'][0]:
-        raise Exception("Number of output channels (" + layer['n_out'][0] + ") must be a "+
-                        "multiple of input channels and number of filters")
+                        "number of filters and x- and y- dimensions")
 
     if ( layer['n_out'][1] != (layer['n_in'][1] - layer['filter_width'][0] + 1) / 
          layer['subsample'][0] ):

@@ -68,19 +68,23 @@ def makeWeightMatrix(rng        = None,
     return W_values
 
 def makeConvolutionFilters(rng = None,
-                           n_filters = None,
+                           n_filters_in = None,
+                           n_filters_out = None,
                            filter_width = None,
                            randomInit = True):
 
     W_values = []
     
-    for i in xrange(n_filters):
+    for i in xrange(n_filters_in*n_filters_out):
         W_values.append( makeWeightMatrix(rng = rng,
                                           n_in = filter_width[0],
                                           n_out = filter_width[1],
                                           randomInit = randomInit) )
     
-    return np.asarray(W_values).reshape((n_filters,1,filter_width[0],filter_width[0]))
+    return np.asarray(W_values).reshape((n_filters_out,
+                                         n_filters_in,
+                                         filter_width[0],
+                                         filter_width[1]))
 
 
 def makeBiasVector(rng        = None,
