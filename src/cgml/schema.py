@@ -32,18 +32,29 @@ def validateConvolutionLayer(layer):
         raise Exception(whenConv+", 'subsample' must be a list with two integers: "+
                         "amount of subsampling in x- and y- dimensions")
 
+    if not layer.get('maxpool'):
+        raise Exception(whenConv+", 'maxpool' needs to be specified")
+
+    if ( type(layer['maxpool']) != list or
+         len(layer['maxpool']) != 2 or
+         type(layer['maxpool'][0]) != int or
+         type(layer['maxpool'][1]) != int ):
+        raise Exception(whenConv+", 'maxpool' must be a list with two integers: "+
+                        "amount of maxpoolin in x- and y- dimensions")
+    
+
     if ( type(layer['n_out']) != list or
          len(layer['n_out']) != 3 ):
         raise Exception(whenConv+", 'n_out' must be a list with three integers: "+
                         "number of filters and x- and y- dimensions")
 
     if ( layer['n_out'][1] != (layer['n_in'][1] - layer['filter_width'][0] + 1) / 
-         layer['subsample'][0] ):
+         (layer['subsample'][0] * layer['maxpool'][0]) ):
         raise Exception(whenConv+", 1st output dimensions should be "+
                         "'(n_in - filter_width + 1)/subsample'")
 
     if ( layer['n_out'][2] != (layer['n_in'][2] - layer['filter_width'][1] + 1) / 
-         layer['subsample'][1] ):
+         (layer['subsample'][1] * layer['maxpool'][1]) ):
         raise Exception(whenConv+", 2st output dimensions should be "+
                         "'(n_in - filter_width + 1)/subsample'")
 

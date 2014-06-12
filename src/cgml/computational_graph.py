@@ -117,6 +117,7 @@ def makeDropoutLayersFromSchema(x,schema,rng):
                                                    dropout      = currDropoutLayer['dropout'],
                                                    filter_width = currDropoutLayer['filter_width'],
                                                    subsample    = currDropoutLayer['subsample'],
+                                                   maxpool      = currDropoutLayer['maxpool'],
                                                    name         = currDropoutLayer.get('name',
                                                                                        "Unnamed")))
 
@@ -208,6 +209,7 @@ def makeLayersFromDropoutLayers(x,
                                             dropout = 0,
                                             filter_width = currDropoutLayer.filter_width,
                                             subsample = currDropoutLayer.subsample,
+                                            maxpool = currDropoutLayer.maxpool,
                                             name = currDropoutLayer.name) )
             
         lastOutput = layers[-1].output
@@ -317,6 +319,7 @@ class ComputationalGraph(object):
         self.encode = None
         self.decode = None
         self.predict = None
+        self.predict_probs = None
 
         for layer,dropoutLayer in zip(self.layers,self.dropoutLayers):
 
@@ -329,6 +332,8 @@ class ComputationalGraph(object):
                 self.predict = theano.function( inputs = [x],
                                                 outputs = T.argmax(self._supervised_output,
                                                                    axis = 1) )
+                self.predict_probs = theano.function( inputs = [x],
+                                                      outputs = self._supervised_output )
 
 
             # If we find a layer that as unsupervised cost associated with it,

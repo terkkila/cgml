@@ -3,7 +3,7 @@ import theano
 import theano.tensor as T
 import numpy as np
 from cgml.computational_graph import ComputationalGraph
-from cgml.data import makeSquareImagesFromVectors
+from cgml.data import makeImagesFromVectors
 from cgml.layers import ConvolutionLayer
 
 def test_conv2d():
@@ -11,7 +11,7 @@ def test_conv2d():
     x2_sym = T.dmatrix('x2')
     filters_sym = T.tensor4('filters1_sym')
 
-    f_sym = T.nnet.conv2d(makeSquareImagesFromVectors(x2_sym),
+    f_sym = T.nnet.conv2d(makeImagesFromVectors(x2_sym,size=(3,3)),
                           filters_sym,
                           border_mode = 'valid')
 
@@ -45,6 +45,7 @@ def test_conv2d_layers():
                            rng = rng,
                            filter_width = [2,2],
                            subsample = [1,1],
+                           maxpool = [1,1],
                            n_in = [1,4,4],
                            n_out = [2,3,3],
                            dropout = 0.0,
@@ -55,6 +56,7 @@ def test_conv2d_layers():
                            rng = rng,
                            filter_width = [3,3],
                            subsample = [1,1],
+                           maxpool = [1,1],
                            n_in = [2,3,3],
                            n_out = [2,1,1],
                            dropout = 0.0,
@@ -84,12 +86,14 @@ def test_conv2d_graph():
                   [{'activation':'conv2d',
                     'filter_width':[2,2],
                     'subsample':[1,1],
+                    'maxpool':[1,1],
                     'n_in':[1,4,4],
                     'n_out':[2,3,3],
                     'dropout':0.0},
                    {'activation':'conv2d',
                     'filter_width':[3,3],
                     'subsample':[1,1],
+                    'maxpool':[1,1],
                     'n_in':[2,3,3],
                     'n_out':[2,1,1],
                     'dropout':0.0},
@@ -107,3 +111,62 @@ def test_conv2d_graph():
     y_hat = model.predict([[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16]])
 
     model.supervised_update([[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16]],[0])
+
+
+def test_conv2d_graph2():
+
+   schema = {
+       'description':'foo',
+       'supervised-cost':{
+           'type':'negative-log-likelihood',
+           'name':'class-out'
+           },
+       'graph': [{
+               'activation': 'conv2d',
+               'n_in':         [1,180,320],
+               'filter_width': [5,9],
+               'subsample':    [2,2],
+               'maxpool':      [4,4],
+               'n_out':        [10,22,39],
+               'dropout':      0.2
+               },{
+               'activation': 'sigmoid',
+               'n_in':       8580,
+               'n_out':      2,
+               'dropout':    0.2,
+               'name':       'class-out'
+               }]
+       }
+
+   schema = {
+       'description':'foo',
+       'supervised-cost':{
+           'type':'negative-log-likelihood',
+           'name':'class-out'
+           },
+       'graph': [{
+               'activation': 'conv2d',
+               'n_in':         [1,10,14],
+               'filter_width': [5,5],
+               'subsample':    [2,2],
+               'maxpool':      [1,1],
+               'n_out':        [10,3,5],
+               'dropout':      0.2
+               },{
+               'activation': 'sigmoid',
+               'n_in':       150,
+               'n_out':      2,
+               'dropout':    0.2,
+               'name':       'class-out'
+               }]
+       }
+
+   model = ComputationalGraph(schema = schema,
+                              learnRate = 0.01,
+                              momentum = 0.0,
+                              seed = 0)
+
+   x = np.random.uniform(size=(10,14)).reshape((1,10*14))
+   y = [0]
+
+   model.supervised_update(x,y)

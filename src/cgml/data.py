@@ -3,15 +3,15 @@ import numpy as np
 import theano
 import theano.tensor as T
 
-def makeSquareImagesFromVectors(x):
+def makeImagesFromVectors(x,size=None):
 
     return T.reshape(x,(x.shape[0],
                         1,
-                        T.cast(T.sqrt(x.shape[1]),'int32'),
-                        T.cast(T.sqrt(x.shape[1]),'int32')))
+                        size[0],
+                        size[1]))
 
 
-def makeVectorsFromSquareImages(x):
+def makeVectorsFromImages(x):
 
     return T.reshape(x,(x.shape[0],
                         T.prod(x.shape[1:])))

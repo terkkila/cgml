@@ -3,12 +3,14 @@ import numpy as np
 import theano
 import theano.tensor as T
 import theano.tensor.shared_randomstreams
+from theano.tensor.signal.downsample import max_pool_2d
+
 from cgml.data import makeShared
 from cgml.data import makeWeightMatrix
 from cgml.data import makeBiasVector
 from cgml.data import makeConvolutionFilters
-from cgml.data import makeSquareImagesFromVectors
-from cgml.data import makeVectorsFromSquareImages
+from cgml.data import makeImagesFromVectors
+from cgml.data import makeVectorsFromImages
 
 def _dropout_from_layer_input(input = None,
                               p     = None,
@@ -46,7 +48,7 @@ class Layer(object):
 
         # If the layer is given an image
         if input.ndim == 4:
-            input = makeVectorsFromSquareImages(input)
+            input = makeVectorsFromImages(input)
             n_in = np.prod(n_in)
 
         # If dropout is positive, apply it to the input
@@ -116,6 +118,7 @@ class ConvolutionLayer(object):
                  dropout = 0,
                  filter_width = 0,
                  subsample = None,
+                 maxpool = None,
                  name = None):
 
         self.name = name
@@ -123,7 +126,7 @@ class ConvolutionLayer(object):
         self.dropout = dropout
 
         if input.ndim == 2:
-            input = makeSquareImagesFromVectors(input)
+            input = makeImagesFromVectors(input,size=(n_in[1],n_in[2]))
 
         # If dropout is positive, apply it to the input
         if dropout > 0:
@@ -141,6 +144,7 @@ class ConvolutionLayer(object):
 
         self.filter_width = filter_width
         self.subsample = subsample
+        self.maxpool = maxpool
 
         # Create W if not given
         if not W:
@@ -157,10 +161,13 @@ class ConvolutionLayer(object):
         assert self.input.ndim == 4
 
         # Output of the 2D convolution is a 4D tensor
-        self.output = self.activation(self.input,
-                                      self.W,
-                                      subsample = self.subsample )
+        self.output_pre = self.activation(self.input,
+                                          self.W,
+                                          subsample = self.subsample )
         
+        self.output = max_pool_2d(self.output_pre, 
+                                  self.maxpool, 
+                                  ignore_border = True)
 
         self.params = [self.W]
 
