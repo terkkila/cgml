@@ -49,6 +49,14 @@ if model.type in ['classifier','supervised-autoencoder']:
 else:
     targetType = np.float
 
+
+# Check if GPU is being used or not
+if np.any([isinstance(x.op, T.Elemwise) for x in model.predict.maker.fgraph.toposort()]):
+    print 'No GPU found -- using CPU instead'
+else:
+    print 'Found GPU -- using that whenever possible'
+
+
 # Write description of the model to infStream
 infStream.write('\n' + str(model) + '\n')
 
