@@ -45,10 +45,9 @@ elif args.cg:
                                seed = args.seed)
 
 if model.type in ['classifier','supervised-autoencoder']:
-    targetType = np.int
+    targetType = np.int32
 else:
-    targetType = np.float
-
+    targetType = theano.config.floatX
 
 # Check if GPU is being used or not
 if np.any([isinstance(x.op, T.Elemwise) for x in model.predict.maker.fgraph.toposort()]):

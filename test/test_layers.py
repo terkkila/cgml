@@ -5,7 +5,13 @@ import theano.tensor as T
 from cgml.computational_graph import ComputationalGraph
 
 def assertModelWeightsMatch(model):
-    
+
+    x2 = T.fmatrix('x2')
+    x1 = T.fvector('x1')
+
+    ravel2d = theano.function([x2],outputs=x2.ravel())
+    ravel1d = theano.function([x1],outputs=x1.ravel())
+
     for layer,dropoutLayer in zip(model.layers,model.dropoutLayers):
         
         W,b = layer.weights()
@@ -13,8 +19,10 @@ def assertModelWeightsMatch(model):
         
         q = 1 - dropoutLayer.dropout
 
-        assert sum(W.flatten() - q * W_prime.flatten()) == 0
-        assert sum(b.flatten() - b_prime.flatten()) == 0
+
+
+        assert sum(ravel2d(W) - q * ravel2d(W_prime)) == 0
+        assert sum(ravel1d(b) - ravel1d(b_prime)) == 0
         
 def test_layers():
 
@@ -41,8 +49,8 @@ def test_layers():
 
     assertModelWeightsMatch(model)
 
-    y_train = np.asarray([0])
-    x_train = np.asarray([range(100)])
+    y_train = np.asarray([0]).astype(np.int32)
+    x_train = np.asarray([range(100)]).astype(theano.config.floatX)
     
     model.supervised_update(x_train,y_train)
 

@@ -1,5 +1,6 @@
 
 import numpy as np
+import theano
 
 def readData(fileName):
 
@@ -54,7 +55,7 @@ class DataReader(object):
                           dtype = float)
         
         y = np.asarray(arr.take(0,axis=1),dtype=self.targetType)
-        x = arr.take(xrange(1,arr.shape[1]),axis=1)
+        x = arr.take(xrange(1,arr.shape[1]),axis=1).astype(theano.config.floatX)
 
         return x,y
 

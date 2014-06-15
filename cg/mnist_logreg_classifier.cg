@@ -1,8 +1,8 @@
 description: MNIST digit classifier
 
-type: classifier
-
-randomInit: True
+supervised-cost:
+  type: negative-log-likelihood
+  name: class-out
 
 graph:
 
@@ -10,3 +10,4 @@ graph:
    n_in:       784
    n_out:      10
    dropout:    0.0
+   name:       class-out

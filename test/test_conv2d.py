@@ -8,7 +8,7 @@ from cgml.layers import ConvolutionLayer
 
 def test_conv2d():
 
-    x2_sym = T.dmatrix('x2')
+    x2_sym = T.fmatrix('x2')
     filters_sym = T.tensor4('filters1_sym')
 
     f_sym = T.nnet.conv2d(makeImagesFromVectors(x2_sym,size=(3,3)),
@@ -19,10 +19,10 @@ def test_conv2d():
     f = theano.function( inputs  = [x2_sym,filters_sym],
                          outputs = f_sym)
 
-    X = np.asarray([[1,2,3,4,5,6,7,8,9],[10,11,12,13,14,15,16,17,18]])
+    X = np.asarray([[1,2,3,4,5,6,7,8,9],[10,11,12,13,14,15,16,17,18]]).astype(theano.config.floatX)
 
     filters = np.asarray([[[0,0,0],[0,1,0],[0,0,0]],
-                          [[0,0,0],[0,2,0],[0,0,0]]]).reshape((2,1,3,3))
+                          [[0,0,0],[0,2,0],[0,0,0]]]).reshape((2,1,3,3)).astype(theano.config.floatX)
     
 
     Y = f(X,filters)
@@ -38,7 +38,7 @@ def test_conv2d_layers():
 
     rng = np.random.RandomState(1234)
 
-    x_sym = T.dmatrix('x_sym')
+    x_sym = T.fmatrix('x_sym')
 
     cl1 = ConvolutionLayer(input = x_sym,
                            activation = T.nnet.conv2d,
@@ -68,7 +68,7 @@ def test_conv2d_layers():
     out2 = theano.function(inputs = [x_sym],
                            outputs = cl2.output)
 
-    x = np.asarray([[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16]])
+    x = np.asarray([[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16]]).astype(theano.config.floatX)
 
     print out1(x).shape
     assert out1(x).shape == (1,2,3,3)
@@ -108,9 +108,13 @@ def test_conv2d_graph():
                                momentum = 0.0,
                                seed = 0)
 
-    y_hat = model.predict([[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16]])
+    X = np.asarray([[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16]]).astype(theano.config.floatX)
 
-    model.supervised_update([[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16]],[0])
+    y_hat = model.predict(X)
+
+    y = np.asarray([0]).astype(np.int32)
+
+    model.supervised_update(X,y)
 
 
 def test_conv2d_graph2():
@@ -166,7 +170,7 @@ def test_conv2d_graph2():
                               momentum = 0.0,
                               seed = 0)
 
-   x = np.random.uniform(size=(10,14)).reshape((1,10*14))
-   y = [0]
+   x = np.random.uniform(size=(10,14)).reshape((1,10*14)).astype(theano.config.floatX)
+   y = np.asarray([0]).astype(np.int32)
 
    model.supervised_update(x,y)

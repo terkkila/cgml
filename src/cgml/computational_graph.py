@@ -259,7 +259,7 @@ class ComputationalGraph(object):
         validateSchema(schema)
 
         # Input data is always a data matrix
-        x = T.dmatrix('x')
+        x = T.fmatrix('x')
 
         # Otherwise clamp the input to the input matrix
         self.input = x
@@ -309,7 +309,7 @@ class ComputationalGraph(object):
 
         # We will use these for supervised and unsupervised learning
         self._supervised_output = None
-        self._unsupervised_output = None        
+        self._unsupervised_output = None       
 
         # We will use these for getting the output
         self._encode_output = None
