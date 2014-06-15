@@ -6,7 +6,7 @@ import theano.tensor as T
 from cgml.layers import Layer,ConvolutionLayer
 from cgml.activations import activationMap
 from cgml.costs import costMap
-from cgml.optimizers import MSGD
+from cgml.optimizers import Momentum,AdaDelta
 from cgml.schema import validateSchema
 from cgml.io import ppf
 
@@ -249,6 +249,8 @@ class ComputationalGraph(object):
                  log   = None,
                  learnRate = None,
                  momentum = None,
+                 epsilon = None,
+                 decay = None,
                  L1Reg = 0.0,
                  L2Reg = 0.0,
                  seed = None,
@@ -296,7 +298,7 @@ class ComputationalGraph(object):
 
         self._setUpCostFunctions(x,y,L1Reg,L2Reg,supCostWeight,unsupCostWeight)
 
-        self._setUpOptimizers(x,y,learnRate,momentum)
+        self._setUpOptimizers(x,y,learnRate,momentum,epsilon,decay)
 
         self.optimizer = theano.opt.Optimizer()
 
@@ -397,7 +399,15 @@ class ComputationalGraph(object):
                                                outputs = self._hybrid_cost)
 
     
-    def _setUpOptimizers(self,x,y,learnRate,momentum):
+    def _setUpOptimizers(self,
+                         x,
+                         y,
+                         learnRate,
+                         momentum,
+                         epsilon,
+                         decay):
+
+        Optimizer = Momentum
 
         self.supervised_update = None
 
@@ -407,11 +417,13 @@ class ComputationalGraph(object):
 
         if self._hybrid_cost:
 
-            self.hybrid_optimizer = MSGD(
+            self.hybrid_optimizer = Optimizer(
                 cost      = self._hybrid_cost,
                 params    = self.params,
                 learnRate = learnRate,
-                momentum  = momentum)
+                momentum  = momentum,
+                epsilon   = epsilon,
+                decay     = decay)
 
             self.hybrid_update = theano.function(
                 inputs  = [x,y],
@@ -422,11 +434,13 @@ class ComputationalGraph(object):
 
         if self._supervised_cost:
             
-            self.supervised_optimizer = MSGD(
+            self.supervised_optimizer = Optimizer(
                 cost      = self._supervised_cost,
                 params    = self.params,
                 learnRate = learnRate,
-                momentum  = momentum)
+                momentum  = momentum,
+                epsilon   = epsilon,
+                decay     = decay)
             
             self.supervised_update = theano.function(
                 inputs  = [x,y],
@@ -439,11 +453,13 @@ class ComputationalGraph(object):
 
         if self._unsupervised_cost:
             
-            self.unsupervised_optimizer = MSGD(
+            self.unsupervised_optimizer = Optimizer(
                 cost      = self._unsupervised_cost,
                 params    = self.params,
                 learnRate = learnRate,
-                momentum  = momentum)
+                momentum  = momentum,
+                epsilon   = epsilon,
+                decay     = decay)
             
             self.unsupervised_update = theano.function(
                 inputs  = [x],

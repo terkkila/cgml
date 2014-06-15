@@ -19,10 +19,13 @@ def assertModelWeightsMatch(model):
         
         q = 1 - dropoutLayer.dropout
 
+        if not sum(ravel2d(W) - q * ravel2d(W_prime)) < 1e-5:
+            print ravel2d(W),ravel2d(W_prime)
+            assert False
 
-
-        assert sum(ravel2d(W) - q * ravel2d(W_prime)) == 0
-        assert sum(ravel1d(b) - ravel1d(b_prime)) == 0
+        if not sum(ravel1d(b) - ravel1d(b_prime)) < 1e-5:
+            print ravel1d(b),ravel1d(b_prime)
+            assert False
         
 def test_layers():
 
