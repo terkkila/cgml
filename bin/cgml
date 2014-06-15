@@ -49,6 +49,8 @@ if model.type in ['classifier','supervised-autoencoder']:
 else:
     targetType = theano.config.floatX
 
+infStream.write(str(model.predict.maker.fgraph.toposort())+'\n')
+
 # Check if GPU is being used or not
 if np.any([isinstance(x.op, T.Elemwise) for x in model.predict.maker.fgraph.toposort()]):
     print 'No GPU found -- using CPU instead'
