@@ -66,7 +66,7 @@ class AdaDelta(object):
             raise Exception("params is missing!")
 
         if epsilon == None:
-            epsilon = 1e-3
+            epsilon = 1e-6
             #raise Exception("epsilon is missing!")
 
         if decay == None:
@@ -105,6 +105,10 @@ class AdaDelta(object):
             self.updates.append( (param,param_new) )
 
 
-            sm_new = decay * sm + ( 1 - decay ) * delta
+            sm_new = decay * sm + ( 1 - decay ) * delta ** 2
             
             self.updates.append( (sm,sm_new) )
+
+    
+
+        

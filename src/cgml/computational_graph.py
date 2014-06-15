@@ -407,7 +407,7 @@ class ComputationalGraph(object):
                          epsilon,
                          decay):
 
-        Optimizer = Momentum
+        Optimizer = AdaDelta
 
         self.supervised_update = None
 
