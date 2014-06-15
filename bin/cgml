@@ -173,15 +173,15 @@ if args.testData:
 
         if model.type in ['classifier','regressor']:
             
-            outStream.write( strMat(zip(y_test,model.predict(x_test))) + '\n' )
+            outStream.write( strMat(zip([y_test],model.predict(x_test))) + '\n' )
             
         elif model.type == 'autoencoder':
             
-            outStream.write( strMat(zip(y_test,model.encode(x_test))) + '\n' )
+            outStream.write( strMat(zip([y_test],model.encode(x_test))) + '\n' )
 
         elif model.type == 'supervised-autoencoder':
 
-            outStream.write( strMat(zip(y_test,
+            outStream.write( strMat(zip([y_test],
                                         model.predict(x_test),
                                         model.encode(x_test),
                                         model.decode(x_test))) + '\n' )
