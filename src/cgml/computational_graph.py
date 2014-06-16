@@ -482,8 +482,7 @@ class ComputationalGraph(object):
                                                np.max(W.flatten()),
                                                np.mean(abs(b.flatten())),
                                                np.min(b.flatten()),
-                                               np.max(b.flatten())])) + " (" + name + ")\n")
-            
+                                               np.max(b.flatten())])) + " (" + name + ")\n")    
 
     def __str__(self):
 

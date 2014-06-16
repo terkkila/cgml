@@ -11,6 +11,8 @@ import numpy as np
 
 schema = yaml.load(open('cg/mnist_logreg_classifier.cg','r'))
 
+deviceBatchSize = 1000
+
 model = ComputationalGraph(schema = schema)
 
 x = T.fmatrix('x')
@@ -18,8 +20,8 @@ y = T.lvector('y')
 
 X_np,y_np = DataReader('mnist_train.tsv',targetType=np.int32).cache()
 
-X_shared = makeShared(X_np)
-y_shared = makeShared(y_np)
+X_shared = makeShared(np.zeros((deviceBatchSize,784),dtype=theano.config.floatX)) #makeShared(X_np)
+y_shared = makeShared(np.zeros((deviceBatchSize,),dtype=np.int32)) #makeShared(y_np)
 
 index = T.lscalar('index')
 
@@ -38,8 +40,8 @@ f = theano.function(inputs  = [index],
 g = theano.function(inputs  = [x],
                     outputs = T.sum(x.ravel()))
 
-#X_shared = makeShared(X_np)
-#y_shared = makeShared(y_np)
+X_shared.set_value(X_np)
+y_shared.set_value(y_np)
 
 start = time.clock()
 for i in xrange(10000):
