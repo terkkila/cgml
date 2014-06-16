@@ -1,0 +1,56 @@
+#!/usr/bin/python
+
+import time
+import theano
+import theano.tensor as T
+from cgml.data import makeShared
+from cgml.io import DataReader
+from cgml.computational_graph import ComputationalGraph
+import yaml
+import numpy as np
+
+schema = yaml.load(open('cg/mnist_logreg_classifier.cg','r'))
+
+model = ComputationalGraph(schema = schema)
+
+x = T.fmatrix('x')
+y = T.lvector('y')
+
+X_np,y_np = DataReader('mnist_train.tsv',targetType=np.int32).cache()
+
+X_shared = makeShared(X_np)
+y_shared = makeShared(y_np)
+
+index = T.lscalar('index')
+
+miniBatchSize = 100
+
+#f = theano.function(inputs  = [index],
+#                    outputs = model._supervised_cost,
+#                    givens  = {x:X_shared[index:(index + miniBatchSize)],
+#                               y:y_shared[index:(index + miniBatchSize)]},
+#                    on_unused_input = 'warn')
+
+f = theano.function(inputs  = [index],
+                    outputs = T.sum(x.ravel()),
+                    givens  = {x:X_shared[index:(index + miniBatchSize)]})
+
+g = theano.function(inputs  = [x],
+                    outputs = T.sum(x.ravel()))
+
+#X_shared = makeShared(X_np)
+#y_shared = makeShared(y_np)
+
+start = time.clock()
+for i in xrange(10000):
+    f(i)
+stop = time.clock()
+
+print stop-start
+
+start = time.clock()
+for i in xrange(10000):
+    g(X_np[i:(i + miniBatchSize)])
+stop = time.clock()
+
+print stop-start

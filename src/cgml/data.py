@@ -27,8 +27,7 @@ def makeShared(data, borrow = True, name = None):
     variable) would lead to a large decrease in performance.
     """
 
-    return theano.shared(np.asarray(data,
-                                    dtype = theano.config.floatX),
+    return theano.shared(np.asarray(data),
                          borrow = borrow,
                          name = name)
 
