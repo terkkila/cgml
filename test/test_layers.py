@@ -29,8 +29,6 @@ def assertModelWeightsMatch(model):
         
 def test_layers():
 
-    rng = np.random.RandomState(0)
-
     schema = {'description':'test CG',
               'supervised-cost': {'type': 'negative-log-likelihood',
                                   'name': 'class-out'},
@@ -52,10 +50,12 @@ def test_layers():
 
     assertModelWeightsMatch(model)
 
-    y_train = np.asarray([0]).astype(np.int32)
+    y_train = np.asarray([0]).astype(np.int)
     x_train = np.asarray([range(100)]).astype(theano.config.floatX)
+
+    model.setTrainDataOnDevice(x_train,y_train)
     
-    model.supervised_update(x_train,y_train)
+    model.supervised_update(0,1)
 
     assertModelWeightsMatch(model)
 

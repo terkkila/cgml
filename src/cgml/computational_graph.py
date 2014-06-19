@@ -260,6 +260,16 @@ class ComputationalGraph(object):
         # Run schema validator before we do anything
         validateSchema(schema)
 
+        self.X_in_device = theano.shared( value = np.asarray( [[np.nan]], 
+                                                              dtype = theano.config.floatX ) )
+
+        self.y_in_device = theano.shared( value = np.asarray( [0],
+                                                              dtype = np.int ) )
+
+        index = T.lscalar('index')
+
+        miniBatchSize = T.lscalar('miniBatchSize')
+        
         # Input data is always a data matrix
         x = T.fmatrix('x')
 
@@ -298,9 +308,7 @@ class ComputationalGraph(object):
 
         self._setUpCostFunctions(x,y,L1Reg,L2Reg,supCostWeight,unsupCostWeight)
 
-        self._setUpOptimizers(x,y,learnRate,momentum,epsilon,decay)
-
-        self.optimizer = theano.opt.Optimizer()
+        self._setUpOptimizers(index,miniBatchSize,x,y,learnRate,momentum,epsilon,decay)
 
 
     def _setUpOutputs(self,x):
@@ -335,7 +343,8 @@ class ComputationalGraph(object):
                                                 outputs = T.argmax(self._supervised_output,
                                                                    axis = 1) )
                 self.predict_probs = theano.function( inputs = [x],
-                                                      outputs = self._supervised_output )
+                                                      outputs = self._supervised_output, 
+                                                      allow_input_downcast = True )
 
 
             # If we find a layer that as unsupervised cost associated with it,
@@ -398,8 +407,16 @@ class ComputationalGraph(object):
             self.hybrid_cost = theano.function(inputs = [x,y],
                                                outputs = self._hybrid_cost)
 
-    
+
+    def setTrainDataOnDevice(self,X,y):
+
+        self.X_in_device.set_value(X)
+        self.y_in_device.set_value(y)
+
+
     def _setUpOptimizers(self,
+                         index,
+                         miniBatchSize,
                          x,
                          y,
                          learnRate,
@@ -426,9 +443,11 @@ class ComputationalGraph(object):
                 decay     = decay)
 
             self.hybrid_update = theano.function(
-                inputs  = [x,y],
+                inputs  = [index,miniBatchSize],
                 outputs = self._hybrid_cost,
-                updates = self.hybrid_optimizer.updates)
+                updates = self.hybrid_optimizer.updates,
+                givens  = {x:self.X_in_device[index:(index+miniBatchSize)],
+                           y:self.y_in_device[index:(index+miniBatchSize)]})
 
             return
 
@@ -443,9 +462,12 @@ class ComputationalGraph(object):
                 decay     = decay)
             
             self.supervised_update = theano.function(
-                inputs  = [x,y],
+                inputs  = [index,miniBatchSize],
                 outputs = self._supervised_cost,
-                updates = self.supervised_optimizer.updates)
+                updates = self.supervised_optimizer.updates,
+                givens  = {x:self.X_in_device[index:(index+miniBatchSize)],
+                           y:self.y_in_device[index:(index+miniBatchSize)]})
+
             
             self.supervised_cost = theano.function(
                 inputs  = [x,y],
@@ -462,9 +484,11 @@ class ComputationalGraph(object):
                 decay     = decay)
             
             self.unsupervised_update = theano.function(
-                inputs  = [x],
+                inputs  = [index,miniBatchSize],
                 outputs = self._unsupervised_cost,
-                updates = self.unsupervised_optimizer.updates)
+                updates = self.unsupervised_optimizer.updates,
+                givens  = {x:self.X_in_device[index:(index+miniBatchSize)]})
+
 
             self.unsupervised_cost = theano.function(
                 inputs  = [x],

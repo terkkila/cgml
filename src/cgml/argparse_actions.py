@@ -111,11 +111,19 @@ def giveArgs(log = None):
         required = False)
 
     parser.add_argument(
-        '--batchSize',
-        help = 'Number of samples per mini-batch',
+        '--deviceBatchSize',
+        help = 'Number of samples stored in device',
         type = int,
-        dest = 'batchSize',
-        default = 1,
+        dest = 'deviceBatchSize',
+        default = 1000,
+        required = False)
+    
+    parser.add_argument(
+        '--miniBatchSize',
+        help = 'Number of samples used in device to update parameters',
+        type = int,
+        dest = 'miniBatchSize',
+        default = 10,
         required = False)
     
     parser.add_argument(
@@ -156,7 +164,8 @@ def giveArgs(log = None):
         log.write(' --L2Reg           ' + str(args.L2Reg)           + '\n')
         log.write(' --supCostWeight   ' + str(args.supCostWeight)   + '\n')
         log.write(' --unsupCostWeight ' + str(args.unsupCostWeight) + '\n')
-        log.write(' --batchSize       ' + str(args.batchSize)       + '\n')
+        log.write(' --deviceBatchSize ' + str(args.deviceBatchSize) + '\n')
+        log.write(' --miniBatchSize   ' + str(args.miniBatchSize)   + '\n')
         log.write(' --nPasses         ' + str(args.nPasses)         + '\n')
         log.write(' --log             ' + str(args.log)             + '\n')
         log.write(' --save            ' + str(args.save)            + '\n')
@@ -177,6 +186,9 @@ def giveArgs(log = None):
     if args.load and not args.trainData and not args.testData:
         raise Exception("Model file to load provided, " + 
                         "but no data for training (--trainData) or prediction (--testData)")
+
+    if args.miniBatchSize >= args.deviceBatchSize:
+        raise Exception("minibatch size should not be larger than device batch size")
 
     return args
 

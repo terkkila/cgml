@@ -84,6 +84,8 @@ def test_adadelta_model():
     x = np.asarray([[1,2,3,4,5,1,2,3,4,5]]).astype(theano.config.floatX)
     y = np.asarray([0])
 
+    model.setTrainDataOnDevice(x,y)
+
     for i in xrange(10):
-        model.supervised_update(x,y)
+        model.supervised_update(0,1)
 
