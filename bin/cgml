@@ -79,73 +79,74 @@ if args.trainData:
                          batchSize = args.deviceBatchSize,
                          targetType = targetType)
     
+
     nBatches = 0
 
     n = 0
     nTh = 100
     
     # Start training. Loops through the training data nPasses times
-    for passIdx in xrange(args.nPasses):
+    #for passIdx in xrange(args.nPasses):
         
-        currMeanCost = 0.0
+    currMeanCost = 0.0
         
-        for x_train,y_train in drTrain:
+    for x_train,y_train in drTrain:
             
-            model.setTrainDataOnDevice(x_train,y_train)
+        model.setTrainDataOnDevice(x_train,y_train)
+        
+        for i in xrange(args.nPasses*args.deviceBatchSize/args.miniBatchSize):
 
-            for i in xrange(args.deviceBatchSize/args.miniBatchSize):
-
-                r = np.random.randint(args.deviceBatchSize-args.miniBatchSize)
-
-                nBatches += 1
-                n += 1 
- 
-                if model.type == 'supervised-autoencoder':
-                    currMeanCost += model.hybrid_update(r,args.miniBatchSize) / n
+            r = np.random.randint(args.deviceBatchSize-args.miniBatchSize)
             
-                elif model.type == 'classifier':
-                    currMeanCost += model.supervised_update(r,args.miniBatchSize) / n
-                elif model.type == 'autoencoder':
-                    currMeanCost += model.unsupervised_update(r,args.miniBatchSize) / n
+            nBatches += 1
+            n += 1 
+            
+            if model.type == 'supervised-autoencoder':
+                currMeanCost += model.hybrid_update(r,args.miniBatchSize) / n
+            
+            elif model.type == 'classifier':
+                currMeanCost += model.supervised_update(r,args.miniBatchSize) / n
+            elif model.type == 'autoencoder':
+                currMeanCost += model.unsupervised_update(r,args.miniBatchSize) / n
+                
+            if n % nTh == 0:
+                infStream.write('Batch ' + str(nBatches) + 
+                                ', avg. train cost ' + str(currMeanCost))
 
-                if n % nTh == 0:
-                    infStream.write('Pass ' + str(passIdx) + ', batch ' + 
-                                    str(nBatches) + ', avg. train cost ' + str(currMeanCost))
-
-                    if args.validData:
-                        if model.type == 'classifier':
-                            validCost = model.supervised_cost(x_valid,y_valid)
-                            yhat = model.predict(x_valid)
-                            pMisClass = np.mean(yhat != y_valid)
-                            infStream.write(', validation cost ' + str(validCost) + 
-                                            ', classification error ' + str(100*pMisClass) + "%")
-                        elif model.type == 'autoencoder':
-                            validCost = model.unsupervised_cost(x_valid)
-                            infStream.write(', validation cost ' + str(validCost))
-                        elif model.type == 'supervised-autoencoder':
-                            validSupCost = model.supervised_cost(x_valid,y_valid)
-                            validUnsupCost = model.unsupervised_cost(x_valid)
-                            validHybCost = model.hybrid_cost(x_valid,y_valid)
-                            yhat = model.predict(x_valid)
-                            pMisClass = np.mean(yhat != y_valid)
-                            infStream.write(', valid.sup.cost ' + str(validSupCost) +
-                                            ', valid.unsup.cost ' + str(validUnsupCost) + 
-                                            ', valid.hyb.cost ' + str(validHybCost) + 
-                                            ', classification error ' + str(100*pMisClass) + "%")
+                if args.validData:
+                    if model.type == 'classifier':
+                        validCost = model.supervised_cost(x_valid,y_valid)
+                        yhat = model.predict(x_valid)
+                        pMisClass = np.mean(yhat != y_valid)
+                        infStream.write(', validation cost ' + str(validCost) + 
+                                        ', classification error ' + str(100*pMisClass) + "%")
+                    elif model.type == 'autoencoder':
+                        validCost = model.unsupervised_cost(x_valid)
+                        infStream.write(', validation cost ' + str(validCost))
+                    elif model.type == 'supervised-autoencoder':
+                        validSupCost = model.supervised_cost(x_valid,y_valid)
+                        validUnsupCost = model.unsupervised_cost(x_valid)
+                        validHybCost = model.hybrid_cost(x_valid,y_valid)
+                        yhat = model.predict(x_valid)
+                        pMisClass = np.mean(yhat != y_valid)
+                        infStream.write(', valid.sup.cost ' + str(validSupCost) +
+                                        ', valid.unsup.cost ' + str(validUnsupCost) + 
+                                        ', valid.hyb.cost ' + str(validHybCost) + 
+                                        ', classification error ' + str(100*pMisClass) + "%")
                     
 
-                    infStream.write('\n')
+                infStream.write('\n')
 
-                    n = 0
+                n = 0
 
-                    currMeanCost = 0.0
+                currMeanCost = 0.0
 
-                    if args.verbose:
-                        model.summarizeParams()
+                if args.verbose:
+                    model.summarizeParams()
 
 
         # After each successful pass, rewind the data reader for training
-        drTrain.rewind()
+        #drTrain.rewind()
 
 infStream.write('\n')
 
