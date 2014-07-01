@@ -9,6 +9,7 @@ from cgml.costs import costMap
 from cgml.optimizers import Momentum,AdaDelta
 from cgml.schema import validateSchema
 from cgml.io import ppf
+import cPickle
 
 class DAG(object):
 
@@ -256,6 +257,8 @@ class ComputationalGraph(object):
                  seed = None,
                  supCostWeight = 1,
                  unsupCostWeight = 1):
+
+        self.meta = None
 
         # Run schema validator before we do anything
         validateSchema(schema)
@@ -536,7 +539,13 @@ class ComputationalGraph(object):
                 " - cost(sup.)  : " + supCostStr                 + '\n' + 
                 " - cost(unsup.): " + unsupCostStr               + '\n' )
 
+    def saveToFile(self,fileName):
 
+        f = open(fileName,'wb')
+    
+        cPickle.dump(self,f,protocol=cPickle.HIGHEST_PROTOCOL)
 
-
+    @classmethod
+    def loadFromFile(cls,fileName):
+        return cPickle.load(open(fileName,'rb'))
 

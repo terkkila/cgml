@@ -4,7 +4,6 @@ import sys
 import argparse
 import theano.tensor as T
 import numpy as np
-import cPickle
 import yaml
 
 from cgml.io import DataReader
@@ -27,9 +26,7 @@ if args.load:
 
     infStream.write('\nLoading model from file: ' + args.load + '\n')
 
-    # Load the model
-    f = open(args.load,'rb')
-    model = cPickle.load(f)
+    model = ComputationalGraph.loadFromFile(args.load)
 
 elif args.cg:
 
@@ -154,10 +151,7 @@ if args.save:
     
     infStream.write('Saving model to file: ' + args.save + '\n')
 
-    f = open(args.save,'wb')
-    
-    cPickle.dump(model,f,protocol=cPickle.HIGHEST_PROTOCOL)
-
+    model.saveToFile(args.save)
 
 def strVec(vec):
     if type(vec) in [np.int64,int,np.float64,float]:
