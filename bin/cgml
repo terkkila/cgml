@@ -2,6 +2,7 @@
 
 import sys
 import argparse
+import theano
 import theano.tensor as T
 import numpy as np
 import yaml
@@ -41,18 +42,19 @@ elif args.cg:
                                unsupCostWeight = args.unsupCostWeight,
                                seed = args.seed)
 
-if model.type in ['classifier','supervised-autoencoder']:
-    targetType = np.int
-else:
-    targetType = theano.config.floatX
+#if model.type in ['classifier','supervised-autoencoder']:
+targetType = np.int
+#else:
+#    targetType = theano.config.floatX
 
-infStream.write(str(model.predict.maker.fgraph.toposort())+'\n')
+if model.type not in ['autoencoder']:
+    infStream.write(str(model.predict.maker.fgraph.toposort())+'\n')
 
-# Check if GPU is being used or not
-if np.any([isinstance(x.op, T.Elemwise) for x in model.predict.maker.fgraph.toposort()]):
-    print 'No GPU found -- using CPU instead'
-else:
-    print 'Found GPU -- using that whenever possible'
+    # Check if GPU is being used or not
+    if np.any([isinstance(x.op, T.Elemwise) for x in model.predict.maker.fgraph.toposort()]):
+        print 'No GPU found -- using CPU instead'
+    else:
+        print 'Found GPU -- using that whenever possible'
 
 
 # Write description of the model to infStream
