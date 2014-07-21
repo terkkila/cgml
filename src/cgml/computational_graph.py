@@ -10,6 +10,7 @@ from cgml.optimizers import Momentum,AdaDelta
 from cgml.schema import validateSchema
 from cgml.io import ppf
 import cPickle
+import copy
 
 class DAG(object):
 
@@ -103,7 +104,7 @@ def makeDropoutLayersFromSchema(x,schema,rng):
                                         randomInit = True,
                                         dropout    = currDropoutLayer['dropout'],
                                         name       = currDropoutLayer.get('name',
-                                                                          "Unnamed")) )
+                                                                          "unnamed")) )
             
             
         else:
@@ -120,7 +121,7 @@ def makeDropoutLayersFromSchema(x,schema,rng):
                                                    subsample    = currDropoutLayer['subsample'],
                                                    maxpool      = currDropoutLayer['maxpool'],
                                                    name         = currDropoutLayer.get('name',
-                                                                                       "Unnamed")))
+                                                                                       "unnamed")))
 
         if currDropoutLayer.get('branch'):
 
@@ -135,7 +136,7 @@ def makeDropoutLayersFromSchema(x,schema,rng):
                                        randomInit = True,
                                        dropout    = currDropoutLayer['branch'][0]['dropout'],
                                        name       = currDropoutLayer['branch'][0].get('name',
-                                                                                      "Unnamed"))
+                                                                                      "unnamed"))
 
         lastOutput = dropoutLayers[-1].output
         lastNOut   = dropoutLayers[-1].n_out
@@ -248,17 +249,18 @@ class ComputationalGraph(object):
     def __init__(self,
                  schema = None,
                  log   = None,
-                 learnRate = None,
-                 momentum = None,
                  epsilon = None,
                  decay = None,
-                 L1Reg = 0.0,
-                 L2Reg = 0.0,
                  seed = None,
                  supCostWeight = 1,
                  unsupCostWeight = 1):
 
         self.meta = None
+
+        self.supCostWeight = supCostWeight
+        self.unsupCostWeight = unsupCostWeight
+        self.epsilon = epsilon
+        self.decay = decay
 
         # Run schema validator before we do anything
         validateSchema(schema)
@@ -269,19 +271,12 @@ class ComputationalGraph(object):
         self.y_in_device = theano.shared( value = np.asarray( [0],
                                                               dtype = np.int ) )
 
-        index = T.lscalar('index')
-
-        miniBatchSize = T.lscalar('miniBatchSize')
-        
         # Input data is always a data matrix
-        x = T.fmatrix('x')
-
-        # Otherwise clamp the input to the input matrix
-        self.input = x
+        self.input = T.fmatrix('x')
 
         # Symbolic output vector
         # NOTE: Currently we assume classification
-        y = T.lvector('y')
+        self.output = T.lvector('y')
 
         self.seed = seed
 
@@ -306,12 +301,29 @@ class ComputationalGraph(object):
         # Collect parameters of all the layers
         self.params = [param for layer in self.dropoutLayers
                        for param in layer.params]
-                
-        self._setUpOutputs(x)
 
-        self._setUpCostFunctions(x,y,L1Reg,L2Reg,supCostWeight,unsupCostWeight)
+        self.compile(log = log)
 
-        self._setUpOptimizers(index,miniBatchSize,x,y,learnRate,momentum,epsilon,decay)
+    def compile(self, log = None):
+
+        if log:
+            log.write("Compiling computational graph:\n")
+
+        index = T.lscalar('index')
+
+        miniBatchSize = T.lscalar('miniBatchSize')
+
+        if log:
+            log.write(" - Setting up and compiling outputs\n")
+        self._setUpOutputs(self.input)
+
+        if log:
+            log.write(" - Setting up and compiling cost functions\n")
+        self._setUpCostFunctions(self.input,self.output,self.supCostWeight,self.unsupCostWeight)
+
+        if log:
+            log.write(" - Setting up and compiling optimizers\n")
+        self._setUpOptimizers(index,miniBatchSize,self.input,self.output,self.epsilon,self.decay)
 
 
     def _setUpOutputs(self,x):
@@ -376,31 +388,22 @@ class ComputationalGraph(object):
     def _setUpCostFunctions(self,
                             x,
                             y,
-                            L1Reg,
-                            L2Reg,
                             supCostWeight,
                             unsupCostWeight):
         
-        self.L1norm = T.sum([T.sum(abs(layer.W.flatten())) for layer in self.layers])
-        self.L2norm = T.sum([T.sum(layer.W.flatten() ** 2) for layer in self.layers])
-        
-        self.reg = L1Reg * self.L1norm + L2Reg * self.L2norm
-
         self._unsupervised_cost = None
         self._supervised_cost = None
         self._hybrid_cost = None
         
         if self._supervised_dropout_output:
             cost = costMap[self.schema['supervised-cost']['type']]
-            self._supervised_cost = supCostWeight * cost(self._supervised_dropout_output,y) + \
-                self.reg
+            self._supervised_cost = supCostWeight * cost(self._supervised_dropout_output,y)
             self.supervised_cost = theano.function(inputs = [x,y],
                                                    outputs = self._supervised_cost)
 
         if self._unsupervised_dropout_output:
             cost = costMap[self.schema['unsupervised-cost']['type']]
-            self._unsupervised_cost = unsupCostWeight * cost(self._unsupervised_dropout_output,x) + \
-                self.reg
+            self._unsupervised_cost = unsupCostWeight * cost(self._unsupervised_dropout_output,x)
             self.unsupervised_cost = theano.function(inputs = [x],
                                                      outputs = self._unsupervised_cost)
 
@@ -422,8 +425,6 @@ class ComputationalGraph(object):
                          miniBatchSize,
                          x,
                          y,
-                         learnRate,
-                         momentum,
                          epsilon,
                          decay):
 
@@ -440,8 +441,6 @@ class ComputationalGraph(object):
             self.hybrid_optimizer = Optimizer(
                 cost      = self._hybrid_cost,
                 params    = self.params,
-                learnRate = learnRate,
-                momentum  = momentum,
                 epsilon   = epsilon,
                 decay     = decay)
 
@@ -459,8 +458,6 @@ class ComputationalGraph(object):
             self.supervised_optimizer = Optimizer(
                 cost      = self._supervised_cost,
                 params    = self.params,
-                learnRate = learnRate,
-                momentum  = momentum,
                 epsilon   = epsilon,
                 decay     = decay)
             
@@ -481,8 +478,6 @@ class ComputationalGraph(object):
             self.unsupervised_optimizer = Optimizer(
                 cost      = self._unsupervised_cost,
                 params    = self.params,
-                learnRate = learnRate,
-                momentum  = momentum,
                 epsilon   = epsilon,
                 decay     = decay)
             
@@ -544,6 +539,18 @@ class ComputationalGraph(object):
         f = open(fileName,'wb')
     
         cPickle.dump(self,f,protocol=cPickle.HIGHEST_PROTOCOL)
+
+    def getSchema(self):
+        
+        schemaWithWeights = copy.deepcopy(self.schema)
+
+        for schemaLayerWithWeights,dropoutLayer,schemaLayer in zip(schemaWithWeights['graph'],
+                                                                  self.dropoutLayers,
+                                                                  self.schema['graph']):
+            schemaLayerWithWeights['W'] = dropoutLayer.W.get_value()
+            schemaLayerWithWeights['b'] = dropoutLayer.b.get_value()
+
+        return schemaWithWeights
 
     @classmethod
     def loadFromFile(cls,fileName):

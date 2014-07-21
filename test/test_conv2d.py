@@ -89,14 +89,16 @@ def test_conv2d_graph():
                     'maxpool':[1,1],
                     'n_in':[1,4,4],
                     'n_out':[2,3,3],
-                    'dropout':0.0},
+                    'dropout':0.0,
+                    'name':'conv1'},
                    {'activation':'conv2d',
                     'filter_width':[3,3],
                     'subsample':[1,1],
                     'maxpool':[1,1],
                     'n_in':[2,3,3],
                     'n_out':[2,1,1],
-                    'dropout':0.0},
+                    'dropout':0.0,
+                    'name':'conv2'},
                    {'activation':'sigmoid',
                     'n_in':2,
                     'n_out':2,
@@ -104,8 +106,6 @@ def test_conv2d_graph():
                     'name':'class-out'}]}
      
     model = ComputationalGraph(schema = schema,
-                               learnRate = 0.01,
-                               momentum = 0.0,
                                seed = 0)
 
     X = np.asarray([[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16]]).astype(theano.config.floatX)
@@ -134,7 +134,8 @@ def test_conv2d_graph2():
                'subsample':    [2,2],
                'maxpool':      [4,4],
                'n_out':        [10,22,39],
-               'dropout':      0.2
+               'dropout':      0.2,
+               'name':         'conv1'
                },{
                'activation': 'sigmoid',
                'n_in':       8580,
@@ -157,7 +158,8 @@ def test_conv2d_graph2():
                'subsample':    [2,2],
                'maxpool':      [1,1],
                'n_out':        [10,3,5],
-               'dropout':      0.2
+               'dropout':      0.2,
+               'name':         'conv1'
                },{
                'activation': 'sigmoid',
                'n_in':       150,
@@ -168,8 +170,6 @@ def test_conv2d_graph2():
        }
 
    model = ComputationalGraph(schema = schema,
-                              learnRate = 0.01,
-                              momentum = 0.0,
                               seed = 0)
 
    x = np.random.uniform(size=(10,14)).reshape((1,10*14)).astype(theano.config.floatX)

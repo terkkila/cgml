@@ -56,38 +56,6 @@ def giveArgs(log = None):
         required = False)
 
     parser.add_argument(
-        '--learnRate',
-        help = 'Learning rate for the stochastic gradient descent algorithm',
-        type = float,
-        dest = 'learnRate',
-        default = 0.01,
-        required = False)
-
-    parser.add_argument(
-        '--momentum',
-        help = 'How much previous gradient update affects the current one',
-        type = float,
-        dest = 'momentum',
-        default = 0.0,
-        required = False)
-
-    parser.add_argument(
-        '--L1Reg',
-        help = 'L1 Regularization term',
-        type = float,
-        dest = 'L1Reg',
-        default = 0.0,
-        required = False)
-
-    parser.add_argument(
-        '--L2Reg',
-        help = 'L2 regularization term',
-        type = float,
-        dest = 'L2Reg',
-        default = 0.0,
-        required = False)
-
-    parser.add_argument(
         '--supCostWeight',
         help = 'How much weight is given to supervised cost',
         type = float,
@@ -127,13 +95,6 @@ def giveArgs(log = None):
         required = False)
     
     parser.add_argument(
-        '--log',
-        help = 'Provide log file',
-        type = str,
-        default = None,
-        required = False)
-    
-    parser.add_argument(
         '--save',
         help = 'Save model to file',
         type = str,
@@ -147,6 +108,14 @@ def giveArgs(log = None):
         default = None,
         required = False)
 
+    parser.add_argument(
+        '--recompileOnLoad',
+        help = 'If the architecture gets changed, one can enforce recompilation',
+        action = 'store_true',
+        default = False,
+        required = False
+        )
+
     args = parser.parse_args()
 
     if log:
@@ -158,18 +127,14 @@ def giveArgs(log = None):
         log.write(' --trainData       ' + str(args.trainData)       + '\n')
         log.write(' --validData       ' + str(args.validData)       + '\n')
         log.write(' --testData        ' + str(args.testData)        + '\n')
-        log.write(' --learnRate       ' + str(args.learnRate)       + '\n')
-        log.write(' --momentum        ' + str(args.momentum)        + '\n')
-        log.write(' --L1Reg           ' + str(args.L1Reg)           + '\n')
-        log.write(' --L2Reg           ' + str(args.L2Reg)           + '\n')
         log.write(' --supCostWeight   ' + str(args.supCostWeight)   + '\n')
         log.write(' --unsupCostWeight ' + str(args.unsupCostWeight) + '\n')
         log.write(' --deviceBatchSize ' + str(args.deviceBatchSize) + '\n')
         log.write(' --miniBatchSize   ' + str(args.miniBatchSize)   + '\n')
         log.write(' --nPasses         ' + str(args.nPasses)         + '\n')
-        log.write(' --log             ' + str(args.log)             + '\n')
         log.write(' --save            ' + str(args.save)            + '\n')
         log.write(' --load            ' + str(args.load)            + '\n')
+        log.write(' --recompileOnLoad ' + str(args.recompileOnLoad) + '\n')
 
     if not args.cg and not args.load:
         raise Exception("You must provide either a Computational Graph schema file (--cg) " + 

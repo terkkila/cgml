@@ -36,7 +36,8 @@ def test_layers():
                   [{'activation':'linear',
                     'n_in':100,
                     'n_out':10,
-                    'dropout':0.5},
+                    'dropout':0.5,
+                    'name':'hidden1'},
                    {'activation':'sigmoid',
                     'n_in':10,
                     'n_out':3,
@@ -44,8 +45,6 @@ def test_layers():
                     'name':'class-out'}]}
      
     model = ComputationalGraph(schema = schema,
-                               learnRate = 0.01,
-                               momentum = 0.0,
                                seed = 0)
 
     assertModelWeightsMatch(model)

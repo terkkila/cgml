@@ -40,7 +40,7 @@ class Layer(object):
                  W = None,
                  b = None,
                  dropout = 0,
-                 name = None):
+                 name = 'unnamed'):
 
         self.name = name
 
@@ -72,7 +72,7 @@ class Layer(object):
                                                  n_out = n_out,
                                                  activation = self.activation,
                                                  randomInit = randomInit),
-                                name = 'b')
+                                name = 'W' + '_' + self.name)
         else:
             self.W = W
         
@@ -84,7 +84,7 @@ class Layer(object):
                                                n_out = n_out,
                                                activation = self.activation,
                                                randomInit = False),
-                                name = 'b')
+                                name = 'b' + '_' + name)
         else:
             self.b = b
 
@@ -119,7 +119,7 @@ class ConvolutionLayer(object):
                  filter_width = 0,
                  subsample = None,
                  maxpool = None,
-                 name = None):
+                 name = 'unnamed'):
 
         self.name = name
         
@@ -153,7 +153,7 @@ class ConvolutionLayer(object):
                                                        n_filters_out = n_out[0],
                                                        filter_width = filter_width,
                                                        randomInit = randomInit),
-                                name = 'W')
+                                name = 'W' + '_' + self.name)
         else:
             self.W = W
         

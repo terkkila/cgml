@@ -54,10 +54,8 @@ class AdaDelta(object):
     def __init__(self, 
                  cost = None,
                  params = None,
-                 decay = None,
                  epsilon = None,
-                 learnRate = None,
-                 momentum = None):
+                 decay = None):
 
         if cost == None:
             raise Exception("cost is missing!")
@@ -67,22 +65,16 @@ class AdaDelta(object):
 
         if epsilon == None:
             epsilon = 1e-6
-            #raise Exception("epsilon is missing!")
 
         if decay == None:
             decay = 0.95
-            #raise Exception("decay is missing!")
 
-        ## LEARNRATE and MOMENTUM are not used
-        
         self.gms = []
         self.sms = []
-        #self.prevDeltas = []
 
         for param in params:
             self.gms.append( theano.shared(value = param.zeros_like().eval()) )
             self.sms.append( theano.shared(value = param.zeros_like().eval()) )
-            #self.prevDeltas.append( theano.shared(value = param.zeros_like().eval()) )
 
         self.updates = []
         

@@ -30,8 +30,6 @@ def test_supervised_autoencoder():
                     'name':'decode-out'}]}
 
     model = ComputationalGraph(schema = schema,
-                               learnRate = 0.01,
-                               momentum = 0.0,
                                seed = 0)
 
     nLayers = len(model.layers)
@@ -77,8 +75,6 @@ def test_unsupervised_autoencoder():
                 'name':'decode-out'}]}
     
     model = ComputationalGraph(schema = schema,
-                               learnRate = 0.01,
-                               momentum = 0.0,
                                seed = 0)
 
     nLayers = len(model.layers)

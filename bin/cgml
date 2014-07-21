@@ -21,7 +21,7 @@ infStream = sys.stderr
 args = giveArgs(log = infStream)
 
 # Open a log if needed
-log = ( open(args.log,'w') if args.log else None )
+#log = ( open(args.log,'w') if args.log else None )
 
 if args.load:
 
@@ -33,14 +33,13 @@ elif args.cg:
 
     # Create the model
     model = ComputationalGraph(schema = yaml.load(open(args.cg,'r')),
-                               log   = log,
-                               learnRate = args.learnRate,
-                               momentum  = args.momentum,
-                               L1Reg = args.L1Reg,
-                               L2Reg = args.L2Reg,
+                               log   = infStream,
                                supCostWeight = args.supCostWeight,
                                unsupCostWeight = args.unsupCostWeight,
                                seed = args.seed)
+
+if args.recompileOnLoad:
+    model.compile(log = infStream)
 
 #if model.type in ['classifier','supervised-autoencoder']:
 targetType = np.int

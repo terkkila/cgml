@@ -109,14 +109,23 @@ def validateSchema(schema):
 
     convLayers = []
 
+    seenNames = set()
+
     for i,layer in zip(xrange(nLayers),schema['graph']):
 
         if not layer.get('n_in'):
             raise Exception("Layer " + str(layer) + " is missing 'n_in'")
 
-
         if not layer.get('n_out'):
             raise Exception("Layer " + str(layer) + " is missing 'n_out'")
+
+        if not layer.get('name'):
+            raise Exception("Layer " + str(layer) + " is missing 'name'")
+
+        if layer['name'] in seenNames:
+            raise Exception("Seeing same layer name twice: " + layer['name'])
+
+        seenNames.add(layer['name'])
 
         if not layer.get('activation'):
             raise Exception("Layer " + str(layer) + " is missing 'activation'")

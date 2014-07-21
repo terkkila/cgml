@@ -77,9 +77,7 @@ def test_adadelta_model():
               }
     
     model = ComputationalGraph(schema = schema,
-                               seed = 0,
-                               learnRate = 0.01,
-                               momentum = 0.01)
+                               seed = 0)
     
     x = np.asarray([[1,2,3,4,5,1,2,3,4,5]]).astype(theano.config.floatX)
     y = np.asarray([0])
