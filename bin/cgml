@@ -41,14 +41,14 @@ elif args.cg:
 if args.recompileOnLoad:
     model.compile(log = infStream)
 
-if model.type not in ['autoencoder']:
-    infStream.write(str(model.predict.maker.fgraph.toposort())+'\n')
+#if model.type not in ['autoencoder']:
+infStream.write(str(model.predict.maker.fgraph.toposort())+'\n')
 
-    # Check if GPU is being used or not
-    if np.any([isinstance(x.op, T.Elemwise) for x in model.predict.maker.fgraph.toposort()]):
-        print 'No GPU found -- using CPU instead'
-    else:
-        print 'Found GPU -- using that whenever possible'
+# Check if GPU is being used or not
+if np.any([isinstance(x.op, T.Elemwise) for x in model.predict.maker.fgraph.toposort()]):
+    print 'No GPU found -- using CPU instead'
+else:
+    print 'Found GPU -- using that whenever possible'
 
 
 # Write description of the model to infStream
@@ -77,10 +77,11 @@ if args.trainData:
 
     n = 0
     nTh = 100
-    
-    # Start training. Loops through the training data nPasses times
-    #for passIdx in xrange(args.nPasses):
-        
+
+    isSupCost = model.schema.get("supervised-cost")
+    isUnSupCost = model.schema.get("unsupervised-cost")
+    isHybridCost = isSupCost and isUnSupCost
+
     currMeanCost = 0.0
         
     for x_train,y_train in drTrain:
@@ -94,12 +95,12 @@ if args.trainData:
             nBatches += 1
             n += 1 
             
-            if model.type == 'supervised-autoencoder':
+            if isHybridCost:
                 currMeanCost += model.hybrid_update(r,args.miniBatchSize) / n
             
-            elif model.type == 'classifier':
+            elif isSupCost:
                 currMeanCost += model.supervised_update(r,args.miniBatchSize) / n
-            elif model.type == 'autoencoder':
+            elif isUnSupCost:
                 currMeanCost += model.unsupervised_update(r,args.miniBatchSize) / n
                 
             if n % nTh == 0:
@@ -107,16 +108,7 @@ if args.trainData:
                                 ', avg. train cost ' + str(currMeanCost))
 
                 if args.validData:
-                    if model.type == 'classifier':
-                        validCost = model.supervised_cost(x_valid,y_valid)
-                        yhat = model.predict(x_valid)
-                        pMisClass = np.mean(yhat != y_valid)
-                        infStream.write(', validation cost ' + str(validCost) + 
-                                        ', classification error ' + str(100*pMisClass) + "%")
-                    elif model.type == 'autoencoder':
-                        validCost = model.unsupervised_cost(x_valid)
-                        infStream.write(', validation cost ' + str(validCost))
-                    elif model.type == 'supervised-autoencoder':
+                    if isHybridCost:
                         validSupCost = model.supervised_cost(x_valid,y_valid)
                         validUnsupCost = model.unsupervised_cost(x_valid)
                         validHybCost = model.hybrid_cost(x_valid,y_valid)
@@ -126,6 +118,16 @@ if args.trainData:
                                         ', valid.unsup.cost ' + str(validUnsupCost) + 
                                         ', valid.hyb.cost ' + str(validHybCost) + 
                                         ', classification error ' + str(100*pMisClass) + "%")
+                        
+                    elif isSupCost:
+                        validCost = model.supervised_cost(x_valid,y_valid)
+                        yhat = model.predict(x_valid)
+                        pMisClass = np.mean(yhat != y_valid)
+                        infStream.write(', validation cost ' + str(validCost) + 
+                                        ', classification error ' + str(100*pMisClass) + "%")
+                    elif isUnSupCost:
+                        validCost = model.unsupervised_cost(x_valid)
+                        infStream.write(', validation cost ' + str(validCost))
                     
 
                 infStream.write('\n')
@@ -137,9 +139,6 @@ if args.trainData:
                 if args.verbose:
                     model.summarizeParams()
 
-
-        # After each successful pass, rewind the data reader for training
-        #drTrain.rewind()
 
 infStream.write('\n')
 
@@ -164,7 +163,7 @@ if args.testData:
     # Data reader for prediction
     drTest  = DataReader(args.testData,
                          batchSize = 1,
-                         targetType = targetType)
+                         targetType = model.targetType)
     
     # Start prediction
     for x_test,y_test in drTest:

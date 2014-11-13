@@ -30,6 +30,7 @@ def assertModelWeightsMatch(model):
 def test_layers():
 
     schema = {'description':'test CG',
+              'type':'classification',
               'supervised-cost': {'type': 'negative-log-likelihood',
                                   'name': 'class-out'},
               'graph':

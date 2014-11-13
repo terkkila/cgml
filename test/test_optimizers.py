@@ -13,6 +13,7 @@ from nose.tools import assert_true,assert_equals,assert_almost_equals
 def test_momentum():
 
     schema = {'description':'logreg',
+              'type':'classification',
               'supervised-cost':
                   {'type':'negative-log-likelihood',
                    'name':'class-out'},
@@ -65,6 +66,7 @@ def test_adadelta_logreg():
 def test_adadelta_model():
 
     schema = {'description':'logreg',
+              'type':'classification',
               'supervised-cost':
                   {'type':'negative-log-likelihood',
                    'name':'class-out'},

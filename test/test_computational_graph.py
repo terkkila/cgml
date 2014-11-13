@@ -7,6 +7,7 @@ from nose.tools import assert_equals,assert_true,assert_almost_equals
 def test_cg():
 
     schema = {'description':'test CG',
+              'type':'classification',
               'supervised-cost': {'type': 'negative-log-likelihood',
                                   'name': 'class-out'},
               'graph':
@@ -29,6 +30,7 @@ def test_cg():
 def test_cg_serde():
 
     schema = {'description':'test CG',
+              'type':'autoencoder',
               'supervised-cost': {'type': 'cross-entropy',
                                   'name': 'decode-out'},
               'graph':

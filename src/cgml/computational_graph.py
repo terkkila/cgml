@@ -47,33 +47,6 @@ class DAG(object):
     def getNode(self,name):
         return self.nodes[ self.name2idx[name] ]
 
-        
-
-def getModelTypeFromSchema(schema):
-    
-    if schema.get('unsupervised-cost') and schema.get('supervised-cost'):
-        
-        sys.stdout.write("!!NOTE: temporarily assuming that graph having hybrid cost "+
-                         "is a supervised autoencoder!!\n")
-        
-        modelType = 'supervised-autoencoder'
-        
-    elif schema.get('unsupervised-cost'):
-        
-        modelType = 'autoencoder'
-        
-        sys.stdout.write("!!NOTE: temporarily assuming that graph having unsupervised cost "+
-                         "is an autoencoder!!\n")
-        
-    elif schema.get('supervised-cost'):
-        
-        sys.stdout.write("!!NOTE: temporarily assuming that graph having supervised cost "+
-                         "is a classifier!!\n")
-        
-        modelType = 'classifier'
-        
-
-    return modelType
 
 def makeDropoutLayersFromSchema(x,schema,rng):
 
@@ -222,8 +195,6 @@ def makeLayersFromDropoutLayers(x,
 
 def parseGraphFromSchema(x,schema,rng):
 
-    modelType = getModelTypeFromSchema(schema)
-
     dropoutLayers,branchDropoutLayer = makeDropoutLayersFromSchema(x,
                                                                    schema,
                                                                    rng)
@@ -238,7 +209,7 @@ def parseGraphFromSchema(x,schema,rng):
         layers.append(branchLayer)
         dropoutLayers.append(branchDropoutLayer)
 
-    return layers,dropoutLayers,modelType
+    return layers,dropoutLayers
 
 
 def percent(x):
@@ -265,6 +236,8 @@ class ComputationalGraph(object):
         # Run schema validator before we do anything
         validateSchema(schema)
 
+        self.type = schema['type']
+
         # Input data is always a data matrix
         self.input = T.fmatrix('x')
 
@@ -272,7 +245,7 @@ class ComputationalGraph(object):
                                                               dtype = theano.config.floatX ) )
 
         if ( schema.get("supervised-cost") and 
-             schema["supervised-cost"]["name"] == "class-out" ):
+             schema["supervised-cost"]["name"] in ["class-out"] ):
 
             self.targetType = np.int
 
@@ -303,12 +276,9 @@ class ComputationalGraph(object):
 
         # Parse layers from the schema. Input is needed to clamp
         # it with the first layer
-        self.layers,self.dropoutLayers,modelType = parseGraphFromSchema(self.input,
-                                                                        self.schema,
-                                                                        self.rng)
-
-        # Get model type
-        self.type = modelType
+        self.layers,self.dropoutLayers = parseGraphFromSchema(self.input,
+                                                              self.schema,
+                                                              self.rng)
 
         # Collect parameters of all the layers
         self.params = [param for layer in self.dropoutLayers
@@ -366,12 +336,26 @@ class ComputationalGraph(object):
                  self.schema['supervised-cost']['name'] == dropoutLayer.name ):
                 self._supervised_dropout_output = dropoutLayer.output
                 self._supervised_output = layer.output
-                self.predict = theano.function( inputs = [x],
-                                                outputs = T.argmax(self._supervised_output,
+
+                # If the target is categorical, we take argmax of the predicted probabilities
+                if self.targetType == np.int:
+                    self.predict = theano.function( inputs = [x],
+                                                    outputs = T.argmax(self._supervised_output,
                                                                    axis = 1) )
-                self.predict_probs = theano.function( inputs = [x],
-                                                      outputs = self._supervised_output, 
-                                                      allow_input_downcast = True )
+                    self.predict_probs = theano.function( inputs = [x],
+                                                          outputs = self._supervised_output,
+                                                          allow_input_downcast = True )
+                
+                else:
+                    
+                    if self.schema['supervised-cost']['name'] == 'scalar-out':
+                        # Using ravel since we want to represent (k,1) column matrices as
+                        # (k,) vectors
+                        self._supervised_dropout_output = dropoutLayer.output.ravel()
+                        self._supervised_output = layer.output.ravel()
+
+                    self.predict = theano.function( inputs = [x],
+                                                    outputs = self._supervised_output )
 
 
             # If we find a layer that as unsupervised cost associated with it,

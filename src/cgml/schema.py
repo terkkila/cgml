@@ -83,19 +83,35 @@ def validateSchema(schema):
         raise Exception("At least one of the following costs should be defined: " + 
                         "'supervised-cost', or 'unsupervised-cost'")
     
+    if not schema.get("type"):
+        raise Exception("Schema does not have field 'type'")
+
+    supportedModelTypes = ["classification","regression","autoencoder","supervised-autoencoder"]
+
+    if schema["type"] not in supportedModelTypes:
+        raise Exception("Model type not in " + str(supportedModelTypes))
+
+    supCostNames = ['scalar-out','class-out','decode-out']
+
     if schema.get('supervised-cost'):
         if not schema['supervised-cost'].get('type'):
             raise Exception("Supervised cost has to have 'type'")
         if not schema['supervised-cost'].get('name'):
             raise Exception("Supervised cost has to have 'name' to match with layer name")
+        if schema['supervised-cost']['name'] not in supCostNames:
+            raise Exception("Layer for the supervised cost needs to be in " + str(supCostNames))
         if schema['supervised-cost']['type'] not in costMap.keys():
             raise Exception("The type of supervised cost has to be in: " + str(costMap.keys()))
+
+    unSupCostNames = ['decode-out']
 
     if schema.get('unsupervised-cost'):
         if not schema['unsupervised-cost'].get('type'):
             raise Exception("Unsupervised cost has to have 'type'")
         if not schema['unsupervised-cost'].get('name'):
             raise Exception("Unsupervised cost has to have 'name' to match with layer name")
+        if schema['unsupervised-cost']['name'] not in unSupCostNames:
+            raise Exception("Layer for the unsupervised cost needs to be in " + str(unSupCostNames))
         if schema['unsupervised-cost']['type'] not in costMap.keys():
             raise Exception("The type of unsupervised cost has to be in: " + str(costMap.keys()))
 

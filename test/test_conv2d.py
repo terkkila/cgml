@@ -80,6 +80,7 @@ def test_conv2d_layers():
 def test_conv2d_graph():
 
     schema = {'description':'test CG',
+              'type':'classification',
               'supervised-cost': {'type': 'negative-log-likelihood', 
                                   'name': 'class-out'},
               'graph':
@@ -123,30 +124,7 @@ def test_conv2d_graph2():
 
    schema = {
        'description':'foo',
-       'supervised-cost':{
-           'type':'negative-log-likelihood',
-           'name':'class-out'
-           },
-       'graph': [{
-               'activation': 'conv2d',
-               'n_in':         [1,180,320],
-               'filter_width': [5,9],
-               'subsample':    [2,2],
-               'maxpool':      [4,4],
-               'n_out':        [10,22,39],
-               'dropout':      0.2,
-               'name':         'conv1'
-               },{
-               'activation': 'sigmoid',
-               'n_in':       8580,
-               'n_out':      2,
-               'dropout':    0.2,
-               'name':       'class-out'
-               }]
-       }
-
-   schema = {
-       'description':'foo',
+       'type':'classification',
        'supervised-cost':{
            'type':'negative-log-likelihood',
            'name':'class-out'

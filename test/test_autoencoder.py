@@ -7,6 +7,7 @@ from cgml.computational_graph import ComputationalGraph
 def test_supervised_autoencoder():
 
     schema = {'description':'test CG',
+              'type':'supervised-autoencoder',
               'supervised-cost': {'type': 'negative-log-likelihood', 
                                   'name': 'class-out'},
               'unsupervised-cost': {'type': 'squared-error',
@@ -59,6 +60,7 @@ def test_supervised_autoencoder():
 def test_unsupervised_autoencoder():
 
     schema = {'description':'test CG',
+              'type':'autoencoder',
               'unsupervised-cost': {'type': 'squared-error',
                                     'name': 'decode-out'},
               'graph':[{
