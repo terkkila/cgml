@@ -84,7 +84,7 @@ def test_unsupervised_autoencoder():
         assert not np.any(model.layers[i].weights[1])
 
     x = np.asarray([[1,2,3,4,5],[2,3,4,5,6]]).astype(theano.config.floatX)
-    y = np.asarray([0,0],dtype=np.int).reshape((2,)).astype(np.int)
+    y = np.asarray([0,0],dtype=theano.config.floatX).reshape((2,)).astype(theano.config.floatX)
     
     x_dec = model.decode(x)
 

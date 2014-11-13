@@ -41,11 +41,6 @@ elif args.cg:
 if args.recompileOnLoad:
     model.compile(log = infStream)
 
-#if model.type in ['classifier','supervised-autoencoder']:
-targetType = np.int
-#else:
-#    targetType = theano.config.floatX
-
 if model.type not in ['autoencoder']:
     infStream.write(str(model.predict.maker.fgraph.toposort())+'\n')
 
@@ -64,7 +59,7 @@ if args.validData:
     infStream.write("Caching validation data for monitoring\n")
 
     x_valid,y_valid = DataReader(args.validData,
-                                 targetType = targetType).cache()
+                                 targetType = model.targetType).cache()
 
 infStream.write('\n')
 
@@ -75,7 +70,7 @@ if args.trainData:
     # Data reader for training
     drTrain = DataReader(args.trainData,
                          batchSize = args.deviceBatchSize,
-                         targetType = targetType)
+                         targetType = model.targetType)
     
 
     nBatches = 0

@@ -265,18 +265,30 @@ class ComputationalGraph(object):
         # Run schema validator before we do anything
         validateSchema(schema)
 
-        self.X_in_device = theano.shared( value = np.asarray( [[np.nan]], 
-                                                              dtype = theano.config.floatX ) )
-
-        self.y_in_device = theano.shared( value = np.asarray( [0],
-                                                              dtype = np.int ) )
-
         # Input data is always a data matrix
         self.input = T.fmatrix('x')
 
-        # Symbolic output vector
-        # NOTE: Currently we assume classification
-        self.output = T.lvector('y')
+        self.X_in_device = theano.shared( value = np.asarray( [[np.nan]],
+                                                              dtype = theano.config.floatX ) )
+
+        if ( schema.get("supervised-cost") and 
+             schema["supervised-cost"]["name"] == "class-out" ):
+
+            self.targetType = np.int
+
+            # Symbolic output vector
+            self.output = T.lvector('y')
+
+        else:
+
+            self.targetType = theano.config.floatX
+            
+            # Symbolic output vector
+            self.output = T.fvector('y')
+
+            
+        self.y_in_device = theano.shared( value = np.asarray( [0],
+                                                              dtype = self.targetType ) )
 
         self.seed = seed
 
