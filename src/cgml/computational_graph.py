@@ -548,6 +548,86 @@ class ComputationalGraph(object):
 
         return schemaWithWeights
 
+
+    def train(self,
+              drTrain = None,
+              x_valid = None,
+              y_valid = None,
+              nPasses = None,
+              deviceBatchSize = None,
+              miniBatchSize = None,
+              verbose = False,
+              infStream = None):
+
+        nBatches = 0
+
+        n = 0
+        nTh = 100
+        
+        isSupCost = self.schema.get("supervised-cost")
+        isUnSupCost = self.schema.get("unsupervised-cost")
+        isHybridCost = isSupCost and isUnSupCost
+        
+        doValidation = (x_valid != None and y_valid != None)
+
+        currMeanCost = 0.0
+        
+        for x_train,y_train in drTrain:
+            
+            self.setTrainDataOnDevice(x_train,y_train)
+        
+            for i in xrange(nPasses*deviceBatchSize/miniBatchSize):
+
+                r = np.random.randint(deviceBatchSize-miniBatchSize)
+            
+                nBatches += 1
+                n += 1 
+            
+                if isHybridCost:
+                    currMeanCost += self.hybrid_update(r,miniBatchSize) / n
+            
+                elif isSupCost:
+                    currMeanCost += self.supervised_update(r,miniBatchSize) / n
+                elif isUnSupCost:
+                    currMeanCost += self.unsupervised_update(r,miniBatchSize) / n
+                
+                if n % nTh == 0 and infStream:
+                    infStream.write('Batch ' + str(nBatches) + 
+                                    ', avg. train cost ' + str(currMeanCost))
+
+                    if doValidation:
+                        if isHybridCost:
+                            validSupCost = self.supervised_cost(x_valid,y_valid)
+                            validUnsupCost = self.unsupervised_cost(x_valid)
+                            validHybCost = self.hybrid_cost(x_valid,y_valid)
+                            yhat = self.predict(x_valid)
+                            pMisClass = np.mean(yhat != y_valid)
+                            infStream.write(', valid.sup.cost ' + str(validSupCost) +
+                                            ', valid.unsup.cost ' + str(validUnsupCost) + 
+                                            ', valid.hyb.cost ' + str(validHybCost) + 
+                                            ', classification error ' + str(100*pMisClass) + "%")
+                        
+                        elif isSupCost:
+                            validCost = self.supervised_cost(x_valid,y_valid)
+                            yhat = self.predict(x_valid)
+                            pMisClass = np.mean(yhat != y_valid)
+                            infStream.write(', validation cost ' + str(validCost) + 
+                                            ', classification error ' + str(100*pMisClass) + "%")
+                        elif isUnSupCost:
+                            validCost = self.unsupervised_cost(x_valid)
+                            infStream.write(', validation cost ' + str(validCost))
+                    
+
+                    infStream.write('\n')
+
+                    n = 0
+
+                    currMeanCost = 0.0
+
+                    if verbose:
+                        self.summarizeParams()
+
+
     @classmethod
     def loadFromFile(cls,fileName):
         return cPickle.load(open(fileName,'rb'))

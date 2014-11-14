@@ -58,8 +58,14 @@ if args.validData:
 
     infStream.write("Caching validation data for monitoring\n")
 
-    x_valid,y_valid = DataReader(args.validData,
-                                 targetType = model.targetType).cache()
+    xValid,yValid = DataReader(args.validData,
+                               targetType = model.targetType,
+                               delimiter = args.delimiter).cache()
+
+else:
+
+    xValid,yValid = None,None
+
 
 infStream.write('\n')
 
@@ -70,75 +76,17 @@ if args.trainData:
     # Data reader for training
     drTrain = DataReader(args.trainData,
                          batchSize = args.deviceBatchSize,
-                         targetType = model.targetType)
-    
-
-    nBatches = 0
-
-    n = 0
-    nTh = 100
-
-    isSupCost = model.schema.get("supervised-cost")
-    isUnSupCost = model.schema.get("unsupervised-cost")
-    isHybridCost = isSupCost and isUnSupCost
-
-    currMeanCost = 0.0
-        
-    for x_train,y_train in drTrain:
-            
-        model.setTrainDataOnDevice(x_train,y_train)
-        
-        for i in xrange(args.nPasses*args.deviceBatchSize/args.miniBatchSize):
-
-            r = np.random.randint(args.deviceBatchSize-args.miniBatchSize)
-            
-            nBatches += 1
-            n += 1 
-            
-            if isHybridCost:
-                currMeanCost += model.hybrid_update(r,args.miniBatchSize) / n
-            
-            elif isSupCost:
-                currMeanCost += model.supervised_update(r,args.miniBatchSize) / n
-            elif isUnSupCost:
-                currMeanCost += model.unsupervised_update(r,args.miniBatchSize) / n
-                
-            if n % nTh == 0:
-                infStream.write('Batch ' + str(nBatches) + 
-                                ', avg. train cost ' + str(currMeanCost))
-
-                if args.validData:
-                    if isHybridCost:
-                        validSupCost = model.supervised_cost(x_valid,y_valid)
-                        validUnsupCost = model.unsupervised_cost(x_valid)
-                        validHybCost = model.hybrid_cost(x_valid,y_valid)
-                        yhat = model.predict(x_valid)
-                        pMisClass = np.mean(yhat != y_valid)
-                        infStream.write(', valid.sup.cost ' + str(validSupCost) +
-                                        ', valid.unsup.cost ' + str(validUnsupCost) + 
-                                        ', valid.hyb.cost ' + str(validHybCost) + 
-                                        ', classification error ' + str(100*pMisClass) + "%")
-                        
-                    elif isSupCost:
-                        validCost = model.supervised_cost(x_valid,y_valid)
-                        yhat = model.predict(x_valid)
-                        pMisClass = np.mean(yhat != y_valid)
-                        infStream.write(', validation cost ' + str(validCost) + 
-                                        ', classification error ' + str(100*pMisClass) + "%")
-                    elif isUnSupCost:
-                        validCost = model.unsupervised_cost(x_valid)
-                        infStream.write(', validation cost ' + str(validCost))
-                    
-
-                infStream.write('\n')
-
-                n = 0
-
-                currMeanCost = 0.0
-
-                if args.verbose:
-                    model.summarizeParams()
-
+                         targetType = model.targetType,
+                         delimiter = args.delimiter)
+     
+    model.train(drTrain = drTrain,
+                x_valid = xValid,
+                y_valid = yValid,
+                nPasses = args.nPasses,
+                deviceBatchSize = args.deviceBatchSize,
+                miniBatchSize = args.miniBatchSize,
+                verbose = args.verbose,
+                infStream = infStream)
 
 infStream.write('\n')
 
@@ -163,7 +111,8 @@ if args.testData:
     # Data reader for prediction
     drTest  = DataReader(args.testData,
                          batchSize = 1,
-                         targetType = model.targetType)
+                         targetType = model.targetType,
+                         delimiter = args.delimiter)
     
     # Start prediction
     for x_test,y_test in drTest:

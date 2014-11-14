@@ -21,13 +21,16 @@ class DataReader(object):
     def __init__(self,
                  fileName, 
                  batchSize = 1,
-                 targetType = np.float):
+                 targetType = theano.config.floatX,
+                 delimiter = '\t'):
 
         self.batchSize = batchSize
 
+        self.delimiter = delimiter
+
         self.f = open(fileName,'r')
 
-        self.nCols = len(self.f.readline().rstrip().split('\t'))
+        self.nCols = len(self.f.readline().rstrip().split(self.delimiter))
 
         self.f.seek(0)
 
@@ -51,7 +54,7 @@ class DataReader(object):
 
     def parseBatch(self,lines):
 
-        arr =  np.asarray([map(float,line.split('\t')) for line in lines],
+        arr =  np.asarray([map(float,line.split(self.delimiter)) for line in lines],
                           dtype = float)
         
         y = np.asarray(arr.take(0,axis=1),dtype=self.targetType)

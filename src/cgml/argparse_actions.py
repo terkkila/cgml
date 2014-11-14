@@ -56,6 +56,14 @@ def giveArgs(log = None):
         required = False)
 
     parser.add_argument(
+        '--delimiter',
+        help    = 'Field delimiter',
+        type    = str,
+        dest    = 'delimiter',
+        default = '\t',
+        required = False),
+    
+    parser.add_argument(
         '--supCostWeight',
         help = 'How much weight is given to supervised cost',
         type = float,
@@ -127,6 +135,7 @@ def giveArgs(log = None):
         log.write(' --trainData       ' + str(args.trainData)       + '\n')
         log.write(' --validData       ' + str(args.validData)       + '\n')
         log.write(' --testData        ' + str(args.testData)        + '\n')
+        log.write(' --delimiter       ' + str(args.delimiter)       + '\n')
         log.write(' --supCostWeight   ' + str(args.supCostWeight)   + '\n')
         log.write(' --unsupCostWeight ' + str(args.unsupCostWeight) + '\n')
         log.write(' --deviceBatchSize ' + str(args.deviceBatchSize) + '\n')

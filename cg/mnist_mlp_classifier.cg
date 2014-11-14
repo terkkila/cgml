@@ -1,5 +1,7 @@
 description: MNIST digit classifier MLP
 
+type: classification
+
 supervised-cost:
   type: negative-log-likelihood
   name: class-out
