@@ -1,6 +1,8 @@
 
 import theano.tensor as T
 import numpy as np
+from theano.ifelse import ifelse
+
 
 def nllCost(yhat, y):
     """Calculates the negative log-likelihood between
@@ -28,14 +30,37 @@ def sqerrCost(yhat, y):
     e = y - yhat
 
     # Mean of MSEs over 2
-    return( T.mean(T.mean(e*e)) / 2 )
+    return( T.mean(T.mean(e*e)) )
 
 
 def crossEntCost(yhat,y):
     return T.mean(-T.mean(y * T.log(yhat) + (1 - y) * T.log(1 - yhat), axis=1))
 
+
+def absCost(yhat,y):
+
+    e = y - yhat
+
+    return T.mean(T.mean(T.abs_(e)))
+
+def huberCost(yhat,y):
+
+    delta = 1/2
+
+    e = y - yhat
+
+    a = .5 * e**2
+
+    b = delta * (abs(e) - delta / 2.)
+
+    l = T.switch(abs(e) <= delta, a, b)
+
+    return l.sum()
+
 costMap = {
     'negative-log-likelihood': nllCost,
     'squared-error': sqerrCost,
-    'cross-entropy': crossEntCost
+    'cross-entropy': crossEntCost,
+    'absolute-error': absCost,
+    'huber-error': huberCost
     }

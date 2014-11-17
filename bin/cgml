@@ -46,9 +46,9 @@ infStream.write(str(model.predict.maker.fgraph.toposort())+'\n')
 
 # Check if GPU is being used or not
 if np.any([isinstance(x.op, T.Elemwise) for x in model.predict.maker.fgraph.toposort()]):
-    print 'No GPU found -- using CPU instead'
+    infStream.write('No GPU found -- using CPU instead\n')
 else:
-    print 'Found GPU -- using that whenever possible'
+    infStream.write('Found GPU -- using that whenever possible\n')
 
 
 # Write description of the model to infStream
@@ -117,9 +117,9 @@ if args.testData:
     # Start prediction
     for x_test,y_test in drTest:
 
-        if model.type in ['classifier','regressor']:
+        if model.type in ['classification','regression']:
             
-            outStream.write( strMat(zip([y_test],model.predict(x_test))) + '\n' )
+            outStream.write( strMat(zip([y_test],[model.predict(x_test)])) + '\n' )
             
         elif model.type == 'autoencoder':
             

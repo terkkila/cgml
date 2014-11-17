@@ -341,7 +341,7 @@ class ComputationalGraph(object):
                 if self.targetType == np.int:
                     self.predict = theano.function( inputs = [x],
                                                     outputs = T.argmax(self._supervised_output,
-                                                                   axis = 1) )
+                                                                   axis = 1).ravel() )
                     self.predict_probs = theano.function( inputs = [x],
                                                           outputs = self._supervised_output,
                                                           allow_input_downcast = True )
