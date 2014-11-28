@@ -1,6 +1,7 @@
 
 import numpy as np
 import theano
+import json
 
 def readData(fileName):
 
@@ -21,16 +22,11 @@ class DataReader(object):
     def __init__(self,
                  fileName, 
                  batchSize = 1,
-                 targetType = theano.config.floatX,
-                 delimiter = '\t'):
+                 targetType = theano.config.floatX):
 
         self.batchSize = batchSize
 
-        self.delimiter = delimiter
-
         self.f = open(fileName,'r')
-
-        self.nCols = len(self.f.readline().rstrip().split(self.delimiter))
 
         self.f.seek(0)
 
@@ -45,7 +41,7 @@ class DataReader(object):
         lines = []
 
         for line in self.f:
-            lines.append( line.rstrip() )
+            lines.append( json.loads(line.rstrip()) )
             if len(lines) == batchSize:
                 break
 
@@ -54,13 +50,17 @@ class DataReader(object):
 
     def parseBatch(self,lines):
 
-        arr =  np.asarray([map(float,line.split(self.delimiter)) for line in lines],
-                          dtype = float)
-        
-        y = np.asarray(arr.take(0,axis=1),dtype=self.targetType)
-        x = arr.take(xrange(1,arr.shape[1]),axis=1).astype(theano.config.floatX)
+        y = np.asarray([obj['y'] for obj in lines],dtype=self.targetType)
+        x = np.asarray([obj['x'] for obj in lines],dtype=theano.config.floatX)
+        sampleIDs = [obj['sampleID'] for obj in lines]
 
-        return x,y
+        #arr =  np.asarray([map(float,line.split(self.delimiter)) for line in lines],
+        #                  dtype = float)
+        
+        #y = np.asarray(arr.take(0,axis=1),dtype=self.targetType)
+        #x = arr.take(xrange(1,arr.shape[1]),axis=1).astype(theano.config.floatX)
+
+        return sampleIDs,x,y
 
 
     def next(self):
@@ -70,13 +70,13 @@ class DataReader(object):
         if len(lines) == 0:
             raise StopIteration
 
-        x,y = self.parseBatch(lines)
+        return self.parseBatch(lines)
 
-        return x,y
 
     def cache(self):
         self.rewind()
         return self.parseBatch(self.readBatch(-1))
+
 
     def rewind(self):
         self.f.seek(0)

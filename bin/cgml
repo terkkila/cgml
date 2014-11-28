@@ -6,10 +6,20 @@ import theano
 import theano.tensor as T
 import numpy as np
 import yaml
+import json
 
+from cgml.io import ppf
 from cgml.io import DataReader
 from cgml.argparse_actions import giveArgs
 from cgml.computational_graph import ComputationalGraph
+
+
+class NumpyArangeEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, np.float32) or isinstance(obj, np.float64):
+            return float(obj)
+        return json.JSONEncoder.default(self, obj)
+
 
 # Print outputs here
 outStream = sys.stdout
@@ -59,8 +69,7 @@ if args.validData:
     infStream.write("Caching validation data for monitoring\n")
 
     xValid,yValid = DataReader(args.validData,
-                               targetType = model.targetType,
-                               delimiter = args.delimiter).cache()
+                               targetType = model.targetType).cache()
 
 else:
 
@@ -76,8 +85,7 @@ if args.trainData:
     # Data reader for training
     drTrain = DataReader(args.trainData,
                          batchSize = args.deviceBatchSize,
-                         targetType = model.targetType,
-                         delimiter = args.delimiter)
+                         targetType = model.targetType)
      
     model.train(drTrain = drTrain,
                 x_valid = xValid,
@@ -111,28 +119,36 @@ if args.testData:
     # Data reader for prediction
     drTest  = DataReader(args.testData,
                          batchSize = 1,
-                         targetType = model.targetType,
-                         delimiter = args.delimiter)
+                         targetType = model.targetType)
     
     # Start prediction
-    for x_test,y_test in drTest:
+    for sampleIDs,x_test,y_test in drTest:
 
         if model.type in ['classification','regression']:
             
-            outStream.write( strMat(zip([y_test],[model.predict(x_test)])) + '\n' )
-            
+            for sampleID,xi_test,yi_test,yhati_test in zip(sampleIDs,
+                                                           x_test,
+                                                           y_test,
+                                                           model.predict(x_test)):
+                
+                predObj = {"sampleID":sampleID,
+                           "y":ppf(yi_test),
+                           "yhat":ppf(yhati_test)}
+                
+                outStream.write(json.dumps(predObj,cls=NumpyArangeEncoder) + "\n")
+                            
         elif model.type == 'autoencoder':
             
             outStream.write( strMat(zip([y_test],model.encode(x_test))) + '\n' )
-
+            
         elif model.type == 'supervised-autoencoder':
-
+            
             outStream.write( strMat(zip([y_test],
                                         model.predict(x_test),
                                         model.encode(x_test),
                                         model.decode(x_test))) + '\n' )
-
-
+            
+            
 
 
 

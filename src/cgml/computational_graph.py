@@ -572,7 +572,7 @@ class ComputationalGraph(object):
 
         currMeanCost = 0.0
         
-        for x_train,y_train in drTrain:
+        for sampleIDs,x_train,y_train in drTrain:
             
             self.setTrainDataOnDevice(x_train,y_train)
         
