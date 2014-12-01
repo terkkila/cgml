@@ -113,7 +113,7 @@ def test_conv2d_graph():
 
     y_hat = model.predict(X)
 
-    y = np.asarray([0]).astype(np.int)
+    y = np.asarray([[0]]).astype(np.int)
 
     model.setTrainDataOnDevice(X,y)
 
@@ -151,7 +151,7 @@ def test_conv2d_graph2():
                               seed = 0)
 
    x = np.random.uniform(size=(10,14)).reshape((1,10*14)).astype(theano.config.floatX)
-   y = np.asarray([0]).astype(np.int)
+   y = np.asarray([[0]]).astype(np.int)
 
    model.setTrainDataOnDevice(x,y)
 

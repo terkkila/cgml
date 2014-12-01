@@ -249,18 +249,18 @@ class ComputationalGraph(object):
 
             self.targetType = np.int
 
-            # Symbolic output vector
-            self.output = T.lvector('y')
+            # Symbolic output matrix
+            self.output = T.lmatrix('y')
 
         else:
 
             self.targetType = theano.config.floatX
             
-            # Symbolic output vector
-            self.output = T.fvector('y')
+            # Symbolic output matrix
+            self.output = T.fmatrix('y')
 
             
-        self.y_in_device = theano.shared( value = np.asarray( [0],
+        self.y_in_device = theano.shared( value = np.asarray( [[0]],
                                                               dtype = self.targetType ) )
 
         self.seed = seed
@@ -348,11 +348,11 @@ class ComputationalGraph(object):
                 
                 else:
                     
-                    if self.schema['supervised-cost']['name'] == 'scalar-out':
-                        # Using ravel since we want to represent (k,1) column matrices as
-                        # (k,) vectors
-                        self._supervised_dropout_output = dropoutLayer.output.ravel()
-                        self._supervised_output = layer.output.ravel()
+                    #if self.schema['supervised-cost']['name'] == 'scalar-out':
+                    #    # Using ravel since we want to represent (k,1) column matrices as
+                    #    # (k,) vectors
+                    #    self._supervised_dropout_output = dropoutLayer.output.ravel()
+                    #    self._supervised_output = layer.output.ravel()
 
                     self.predict = theano.function( inputs = [x],
                                                     outputs = self._supervised_output )

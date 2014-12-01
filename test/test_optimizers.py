@@ -82,7 +82,7 @@ def test_adadelta_model():
                                seed = 0)
     
     x = np.asarray([[1,2,3,4,5,1,2,3,4,5]]).astype(theano.config.floatX)
-    y = np.asarray([0])
+    y = np.asarray([[0]])
 
     model.setTrainDataOnDevice(x,y)
 

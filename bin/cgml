@@ -68,8 +68,8 @@ if args.validData:
 
     infStream.write("Caching validation data for monitoring\n")
 
-    xValid,yValid = DataReader(args.validData,
-                               targetType = model.targetType).cache()
+    sampleIDs,xValid,yValid = DataReader(args.validData,
+                                         targetType = model.targetType).cache()
 
 else:
 
@@ -132,10 +132,10 @@ if args.testData:
                                                            model.predict(x_test)):
                 
                 predObj = {"sampleID":sampleID,
-                           "y":ppf(yi_test),
-                           "yhat":ppf(yhati_test)}
+                           "y":yi_test.tolist(),
+                           "yhat":yhati_test.tolist()}
                 
-                outStream.write(json.dumps(predObj,cls=NumpyArangeEncoder) + "\n")
+                outStream.write(json.dumps(predObj) + "\n")
                             
         elif model.type == 'autoencoder':
             
