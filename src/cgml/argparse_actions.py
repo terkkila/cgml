@@ -38,6 +38,14 @@ def giveArgs(log = None):
         dest     = 'trainData',
         default  = None,
         required = False)
+    
+    parser.add_argument(
+        '--trainDataStream',
+        help     = 'Streaming data for training',
+        dest     = 'trainDataStream',
+        default  = False,
+        action = 'store_true',
+        required = False)
 
     parser.add_argument(
         '--validData',
@@ -133,6 +141,7 @@ def giveArgs(log = None):
         log.write(' --seed            ' + str(args.seed)            + '\n')
         log.write(' --cg              ' + str(args.cg)              + '\n')
         log.write(' --trainData       ' + str(args.trainData)       + '\n')
+        log.write(' --trainDataStream ' + str(args.trainDataStream) + '\n')
         log.write(' --validData       ' + str(args.validData)       + '\n')
         log.write(' --testData        ' + str(args.testData)        + '\n')
         log.write(' --delimiter       ' + str(args.delimiter)       + '\n')
@@ -153,11 +162,7 @@ def giveArgs(log = None):
         raise Exception("Cannot provide both Computational Graph schema file (--cg) " + 
                         "and model to load (--load)")
 
-    if args.cg and not args.trainData:
-        raise Exception("Computational Graph schema file provided, " + 
-                        "but no input data for training (--trainData)")
-
-    if args.load and not args.trainData and not args.testData:
+    if args.load and not (args.trainData or args.trainDataStream) and not args.testData:
         raise Exception("Model file to load provided, " + 
                         "but no data for training (--trainData) or prediction (--testData)")
 

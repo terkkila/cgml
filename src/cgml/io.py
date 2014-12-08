@@ -26,9 +26,12 @@ class DataReader(object):
 
         self.batchSize = batchSize
 
-        self.f = open(fileName,'r')
-
-        self.f.seek(0)
+        # Trying to open the file, but in case it is not possible
+        # assume it is a stream
+        try:
+            self.f = open(fileName,'r')
+        except:
+            self.f = fileName
 
         self.targetType = targetType
 
@@ -53,12 +56,6 @@ class DataReader(object):
         y = np.asarray([obj['y'] for obj in lines],dtype=self.targetType)
         x = np.asarray([obj['x'] for obj in lines],dtype=theano.config.floatX)
         sampleIDs = [obj['sampleID'] for obj in lines]
-
-        #arr =  np.asarray([map(float,line.split(self.delimiter)) for line in lines],
-        #                  dtype = float)
-        
-        #y = np.asarray(arr.take(0,axis=1),dtype=self.targetType)
-        #x = arr.take(xrange(1,arr.shape[1]),axis=1).astype(theano.config.floatX)
 
         return sampleIDs,x,y
 

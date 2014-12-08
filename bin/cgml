@@ -13,14 +13,6 @@ from cgml.io import DataReader
 from cgml.argparse_actions import giveArgs
 from cgml.computational_graph import ComputationalGraph
 
-
-class NumpyArangeEncoder(json.JSONEncoder):
-    def default(self, obj):
-        if isinstance(obj, np.float32) or isinstance(obj, np.float64):
-            return float(obj)
-        return json.JSONEncoder.default(self, obj)
-
-
 # Print outputs here
 outStream = sys.stdout
 
@@ -78,15 +70,25 @@ else:
 
 infStream.write('\n')
 
-if args.trainData:
+if args.trainData or args.trainDataStream:
 
     infStream.write("Starting to read input data for training\n")
 
-    # Data reader for training
-    drTrain = DataReader(args.trainData,
-                         batchSize = args.deviceBatchSize,
-                         targetType = model.targetType)
+    if args.trainData:
+        
+        # Data reader from file
+        drTrain = DataReader(args.trainData,
+                             batchSize = args.deviceBatchSize,
+                             targetType = model.targetType)
      
+    else:
+
+        # Data reader from stream
+        drTrain = DataReader(sys.stdin,
+                             batchSize = args.deviceBatchSize,
+                             targetType = model.targetType)
+        
+
     model.train(drTrain = drTrain,
                 x_valid = xValid,
                 y_valid = yValid,
