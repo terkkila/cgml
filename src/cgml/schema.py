@@ -115,6 +115,13 @@ def validateSchema(schema):
     if nLayers == 0:
         raise Exception("Graph in schema has no layers")
 
+    if not schema.get('names'):
+        sys.stderr.write("'names' not specified => generating default ones: f0,f1,...,fk\n")
+        schema['names'] = ['f{0}'.format(i) for i in xrange(schema['graph'][0]['n_in'])]
+    
+    if schema['graph'][0]['n_in'] != len(schema['names']):
+        raise Exception("'names' does not have same length as the number of inputs")
+
     convLayers = []
 
     seenNames = set()

@@ -128,14 +128,18 @@ if args.testData:
 
         if model.type in ['classification','regression']:
             
-            for sampleID,xi_test,yi_test,yhati_test in zip(sampleIDs,
-                                                           x_test,
-                                                           y_test,
-                                                           model.predict(x_test)):
+            for sampleID,xi_test,yi_test,yhati_test,impi_test in zip(sampleIDs,
+                                                                     x_test,
+                                                                     y_test,
+                                                                     model.predict(x_test),
+                                                                     model.importance(x_test)):
                 
                 predObj = {"sampleID":sampleID,
                            "y":yi_test.tolist(),
                            "yhat":yhati_test.tolist()}
+
+                if args.getImportance:
+                    predObj["importance"] = impi_test
                 
                 outStream.write(json.dumps(predObj) + "\n")
                             

@@ -11,6 +11,7 @@ from cgml.schema import validateSchema
 from cgml.io import ppf
 import cPickle
 import copy
+from collections import OrderedDict
 
 class DAG(object):
 
@@ -307,7 +308,6 @@ class ComputationalGraph(object):
             log.write(" - Setting up and compiling optimizers\n")
         self._setUpOptimizers(index,miniBatchSize,self.input,self.output,self.epsilon,self.decay)
 
-
     def _setUpOutputs(self,x):
 
         # We will use these for supervised and unsupervised learning
@@ -334,9 +334,31 @@ class ComputationalGraph(object):
             # we will bind the respective output variables to that layer
             if ( self.schema.get('supervised-cost') and 
                  self.schema['supervised-cost']['name'] == dropoutLayer.name ):
+
                 self._supervised_dropout_output = dropoutLayer.output
                 self._supervised_output = layer.output
 
+                # To simplify the notation of the upcoming importance calculation
+                # we rename the variables. 
+                # - _s refers to a symbolic variable
+                # - i refers to row, and j refers to column
+                X_s = x
+                Y_s = self._supervised_output
+                
+                # Calculate the gragient of the output wrt. to all inputs
+                # Will yield a 3d matrix, one 2d matrix per sample in the minibatch
+                # Dimensions in the 2d matrix correspond to variable (1st dim)
+                # and output element in the vectorized target (2nd dim)
+                g = theano.map(lambda i: theano.map(lambda j: T.grad(Y_s[i,j],
+                                                                     X_s).take([i],
+                                                                               axis=0).ravel(), 
+                                                    sequences = [T.arange(Y_s.shape[1])]),
+                                       sequences = [T.arange(Y_s.shape[0])])
+                
+                # Compiled function for importance calculation
+                self._importance = theano.function( inputs = [x],
+                                                    outputs = g)
+                
                 # If the target is categorical, we take argmax of the predicted probabilities
                 if self.targetType == np.int:
                     self.predict = theano.function( inputs = [x],
@@ -348,12 +370,6 @@ class ComputationalGraph(object):
                 
                 else:
                     
-                    #if self.schema['supervised-cost']['name'] == 'scalar-out':
-                    #    # Using ravel since we want to represent (k,1) column matrices as
-                    #    # (k,) vectors
-                    #    self._supervised_dropout_output = dropoutLayer.output.ravel()
-                    #    self._supervised_output = layer.output.ravel()
-
                     self.predict = theano.function( inputs = [x],
                                                     outputs = self._supervised_output )
 
@@ -380,6 +396,25 @@ class ComputationalGraph(object):
                 self.decode = theano.function( inputs = [x],
                                                outputs = self._decode_output )
 
+
+    def importance(self,x):
+
+        # Will return a stack of 2d matrices, one matrix per sample in the minibatch
+        rawImportance = self._importance(x)
+
+        finalImportance = []
+
+        # Loop through each 2d matrix in the minibatch
+        for tmpImportance in rawImportance:
+
+            # Assign name to each variable importance vector for vectorized outputs
+            sampleImportance = OrderedDict([ (name,variableImportance.tolist()) 
+                                             for name,variableImportance in zip(self.schema['names'],
+                                                                                tmpImportance.T)])
+
+            finalImportance.append(sampleImportance)
+
+        return finalImportance
                 
     def _setUpCostFunctions(self,
                             x,

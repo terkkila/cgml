@@ -129,8 +129,14 @@ def giveArgs(log = None):
         help = 'If the architecture gets changed, one can enforce recompilation',
         action = 'store_true',
         default = False,
-        required = False
-        )
+        required = False)
+
+    parser.add_argument(
+        '--getImportance',
+        help = 'Append importance scores to predictions',
+        default = False,
+        action = 'store_true',
+        required = False)
 
     args = parser.parse_args()
 
