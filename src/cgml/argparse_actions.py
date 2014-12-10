@@ -88,13 +88,6 @@ def giveArgs(log = None):
         required = False)
 
     parser.add_argument(
-        '--nPasses',
-        help = 'How many passes through the data we go',
-        type = int,
-        default = 1,
-        required = False)
-
-    parser.add_argument(
         '--deviceBatchSize',
         help = 'Number of samples stored in device',
         type = int,
@@ -163,7 +156,6 @@ def giveArgs(log = None):
         log.write(' --unsupCostWeight ' + str(args.unsupCostWeight) + '\n')
         log.write(' --deviceBatchSize ' + str(args.deviceBatchSize) + '\n')
         log.write(' --miniBatchSize   ' + str(args.miniBatchSize)   + '\n')
-        log.write(' --nPasses         ' + str(args.nPasses)         + '\n')
         log.write(' --save            ' + str(args.save)            + '\n')
         log.write(' --load            ' + str(args.load)            + '\n')
         log.write(' --recompileOnLoad ' + str(args.recompileOnLoad) + '\n')

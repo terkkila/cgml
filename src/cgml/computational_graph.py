@@ -589,8 +589,6 @@ class ComputationalGraph(object):
               drTrain = None,
               x_valid = None,
               y_valid = None,
-              nPasses = None,
-              deviceBatchSize = None,
               miniBatchSize = None,
               verbose = False,
               infStream = None):
@@ -600,6 +598,8 @@ class ComputationalGraph(object):
         n = 0
         nTh = 100
         
+        deviceBatchSize = drTrain.batchSize
+
         isSupCost = self.schema.get("supervised-cost")
         isUnSupCost = self.schema.get("unsupervised-cost")
         isHybridCost = isSupCost and isUnSupCost
@@ -612,7 +612,7 @@ class ComputationalGraph(object):
             
             self.setTrainDataOnDevice(x_train,y_train)
         
-            for i in xrange(nPasses*deviceBatchSize/miniBatchSize):
+            for i in xrange(deviceBatchSize/miniBatchSize):
 
                 r = np.random.randint(deviceBatchSize-miniBatchSize)
             

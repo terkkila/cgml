@@ -95,8 +95,6 @@ if args.trainData or args.trainDataStream:
     model.train(drTrain = drTrain,
                 x_valid = xValid,
                 y_valid = yValid,
-                nPasses = args.nPasses,
-                deviceBatchSize = args.deviceBatchSize,
                 miniBatchSize = args.miniBatchSize,
                 verbose = args.verbose,
                 infStream = infStream)
