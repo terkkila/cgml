@@ -349,15 +349,16 @@ class ComputationalGraph(object):
                 # Will yield a 3d matrix, one 2d matrix per sample in the minibatch
                 # Dimensions in the 2d matrix correspond to variable (1st dim)
                 # and output element in the vectorized target (2nd dim)
-                g = theano.map(lambda i: theano.map(lambda j: T.grad(Y_s[i,j],
-                                                                     X_s).take([i],
-                                                                               axis=0).ravel(), 
-                                                    sequences = [T.arange(Y_s.shape[1])]),
-                                       sequences = [T.arange(Y_s.shape[0])])
+                g,upd = theano.map(lambda i: theano.map(lambda j: T.grad(Y_s[i,j],
+                                                                         X_s).take([i],
+                                                                                   axis=0).ravel(), 
+                                                        sequences = [T.arange(Y_s.shape[1])]),
+                                   sequences = [T.arange(Y_s.shape[0])])
                 
                 # Compiled function for importance calculation
                 self._importance = theano.function( inputs = [x],
-                                                    outputs = g)
+                                                    outputs = g,
+                                                    updates = upd)
                 
                 # If the target is categorical, we take argmax of the predicted probabilities
                 if self.targetType == np.int:

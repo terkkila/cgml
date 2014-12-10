@@ -3,6 +3,8 @@ import math
 import theano.tensor as T
 from cgml.activations import activationMap
 from cgml.costs import costMap
+import sys
+import numpy as np
 
 def validateConvolutionLayer(layer):
 
@@ -117,9 +119,9 @@ def validateSchema(schema):
 
     if not schema.get('names'):
         sys.stderr.write("'names' not specified => generating default ones: f0,f1,...,fk\n")
-        schema['names'] = ['f{0}'.format(i) for i in xrange(schema['graph'][0]['n_in'])]
+        schema['names'] = ['f{0}'.format(i) for i in xrange(np.prod(schema['graph'][0]['n_in']))]
     
-    if schema['graph'][0]['n_in'] != len(schema['names']):
+    if np.prod(schema['graph'][0]['n_in']) != len(schema['names']):
         raise Exception("'names' does not have same length as the number of inputs")
 
     convLayers = []
