@@ -132,6 +132,12 @@ def giveArgs(log = None):
         required = False)
 
     parser.add_argument(
+        "--predictions",
+        help = "Print predictions to file",
+        default = None,
+        required = False)
+
+    parser.add_argument(
         '--getImportance',
         help = 'Append importance scores to predictions',
         default = False,
@@ -150,6 +156,8 @@ def giveArgs(log = None):
         log.write(' --trainDataStream ' + str(args.trainDataStream) + '\n')
         log.write(' --validData       ' + str(args.validData)       + '\n')
         log.write(' --testData        ' + str(args.testData)        + '\n')
+        log.write(' --predictions     ' + str(args.predictions)     + '\n')
+        log.write(' --getImportance   ' + str(args.getImportance)   + '\n')
         log.write(' --delimiter       ' + str(args.delimiter)       + '\n')
         log.write(' --supCostWeight   ' + str(args.supCostWeight)   + '\n')
         log.write(' --unsupCostWeight ' + str(args.unsupCostWeight) + '\n')

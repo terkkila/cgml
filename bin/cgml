@@ -13,14 +13,17 @@ from cgml.io import DataReader
 from cgml.argparse_actions import giveArgs
 from cgml.computational_graph import ComputationalGraph
 
-# Print outputs here
-outStream = sys.stdout
-
 # Print info here
 infStream = sys.stderr
 
 # Parsing the arguments
 args = giveArgs(log = infStream)
+
+# Print outputs here
+if args.predictions:
+    outStream = open(args.predictions,'w')
+else:
+    outStream = None
 
 # Open a log if needed
 #log = ( open(args.log,'w') if args.log else None )
@@ -118,6 +121,9 @@ if args.testData:
 
     infStream.write("Starting to read data for prediction\n")
     
+    if not args.predictions:
+        infStream.write("WARNING: no predictions file provided! Predictions will not be saved\n")
+
     # Data reader for prediction
     drTest  = DataReader(args.testData,
                          batchSize = 1,
@@ -141,18 +147,21 @@ if args.testData:
                 if args.getImportance:
                     predObj["importance"] = impi_test
                 
-                outStream.write(json.dumps(predObj) + "\n")
+                if outStream:
+                    outStream.write(json.dumps(predObj) + "\n")
                             
         elif model.type == 'autoencoder':
             
-            outStream.write( strMat(zip([y_test],model.encode(x_test))) + '\n' )
+            if outStream:
+                outStream.write( strMat(zip([y_test],model.encode(x_test))) + '\n' )
             
         elif model.type == 'supervised-autoencoder':
             
-            outStream.write( strMat(zip([y_test],
-                                        model.predict(x_test),
-                                        model.encode(x_test),
-                                        model.decode(x_test))) + '\n' )
+            if outStream:
+                outStream.write( strMat(zip([y_test],
+                                            model.predict(x_test),
+                                            model.encode(x_test),
+                                            model.decode(x_test))) + '\n' )
             
             
 
