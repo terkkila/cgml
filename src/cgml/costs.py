@@ -41,7 +41,7 @@ def absCost(yhat,y):
 
     e = y - yhat
 
-    return T.mean(T.mean(T.abs_(e)))
+    return T.mean(T.abs_(e.ravel()))
 
 def huberCost(yhat,y):
 

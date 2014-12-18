@@ -90,14 +90,21 @@ if args.trainData or args.trainDataStream:
         drTrain = DataReader(sys.stdin,
                              batchSize = args.deviceBatchSize,
                              targetType = model.targetType)
-        
 
-    model.train(drTrain = drTrain,
-                x_valid = xValid,
-                y_valid = yValid,
-                miniBatchSize = args.miniBatchSize,
-                verbose = args.verbose,
-                infStream = infStream)
+    for passIdx in xrange(args.nPasses):
+
+        infStream.write("Pass " + str(passIdx) + "\n")
+
+        model.train(drTrain = drTrain,
+                    x_valid = xValid,
+                    y_valid = yValid,
+                    miniBatchSize = args.miniBatchSize,
+                    verbose = args.verbose,
+                    infStream = infStream)
+
+        if args.nPasses > 1:
+            drTrain.rewind()
+
 
 infStream.write('\n')
 
@@ -160,8 +167,7 @@ if args.testData:
                                             model.predict(x_test),
                                             model.encode(x_test),
                                             model.decode(x_test))) + '\n' )
-            
-            
+
 
 
 

@@ -137,6 +137,20 @@ def giveArgs(log = None):
         action = 'store_true',
         required = False)
 
+    parser.add_argument(
+        '--ensemble',
+        help = 'If greater than 1, ensemble predictor will be made',
+        default = 1,
+        type = int,
+        required = False)
+
+    parser.add_argument(
+        '--nPasses',
+        help = 'How many passes over the data',
+        default = 1,
+        type = int,
+        required = False)
+
     args = parser.parse_args()
 
     if log:
@@ -156,8 +170,10 @@ def giveArgs(log = None):
         log.write(' --unsupCostWeight ' + str(args.unsupCostWeight) + '\n')
         log.write(' --deviceBatchSize ' + str(args.deviceBatchSize) + '\n')
         log.write(' --miniBatchSize   ' + str(args.miniBatchSize)   + '\n')
+        log.write(' --nPasses         ' + str(args.nPasses)         + '\n') 
         log.write(' --save            ' + str(args.save)            + '\n')
         log.write(' --load            ' + str(args.load)            + '\n')
+        log.write(' --ensemble        ' + str(args.ensemble)        + '\n')
         log.write(' --recompileOnLoad ' + str(args.recompileOnLoad) + '\n')
 
     if not args.cg and not args.load:
@@ -173,7 +189,10 @@ def giveArgs(log = None):
                         "but no data for training (--trainData) or prediction (--testData)")
 
     if args.miniBatchSize >= args.deviceBatchSize:
-        raise Exception("minibatch size should not be larger than device batch size")
+        raise Exception("--minibatchSize should not be larger than --deviceBatchSize")
+
+    if args.ensemble < 1:
+        raise Exception("--ensemble cannot be smaller than 1")
 
     return args
 
