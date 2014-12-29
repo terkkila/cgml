@@ -11,4 +11,5 @@ setup( name         = 'cgml',
        install_requires = ['scipy','numpy','PyYAML','simplejson','theano'],
        packages     = ['cgml'],
        package_dir  = {'cgml': 'src/cgml'},
-       data_files   = [('bin', ['bin/cgml'])])
+       scripts      = ['bin/cgml'])
+#       data_files   = [('bin', ['bin/cgml'])])
