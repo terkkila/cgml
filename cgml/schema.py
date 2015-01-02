@@ -57,8 +57,8 @@ def validateConvolutionLayer(layer):
 
     if ( layer['n_out'][2] != (layer['n_in'][2] - layer['filter_width'][1] + 1) / 
          (layer['subsample'][1] * layer['maxpool'][1]) ):
-        raise Exception(whenConv+", 2st output dimensions should be "+
-                        "'(n_in - filter_width + 1)/subsample'")
+        raise Exception(whenConv+", 2nd output dimensions should be "+
+                        "'(n_in - filter_width + 1)/(subsample*maxpool)'")
 
     if layer.get('branch'):
         raise Exception(whenConv+", 'branch' cannot be set")

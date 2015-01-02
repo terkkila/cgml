@@ -1,6 +1,9 @@
 # coding=utf-8
 
-from setuptools import setup
+from ez_setup import use_setuptools
+use_setuptools()
+
+from setuptools import setup,find_packages
 
 setup( name         = 'cgml',
        version      = '1.0',
@@ -8,8 +11,7 @@ setup( name         = 'cgml',
        author       = 'Timo Erkkilä',
        author_email = 'timo.erkkila@gmail.com',
        url          = 'http://github.com/terkkila/cgml/',
-       install_requires = ['scipy','numpy','PyYAML','simplejson','theano'],
-       packages     = ['cgml'],
-       package_dir  = {'cgml': 'src/cgml'},
+       packages     = find_packages(),
+       #package_dir  = {'cgml': 'src/cgml'},
        scripts      = ['bin/cgml'])
 #       data_files   = [('bin', ['bin/cgml'])])
