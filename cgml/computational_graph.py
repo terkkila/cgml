@@ -593,7 +593,7 @@ class ComputationalGraph(object):
               verbose = False,
               infStream = None):
 
-        trainLog = {'batchIdx':[]
+        trainLog = {'batchIdx':[],
                     'trainCost':[],
                     'validCost':[]}
 
