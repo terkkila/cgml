@@ -39,10 +39,13 @@ elif args.cg:
 
     # Create the model
     model = ComputationalGraph(schema = yaml.load(open(args.cg,'r')),
-                               log   = infStream,
+                               log = infStream,
                                supCostWeight = args.supCostWeight,
                                unsupCostWeight = args.unsupCostWeight,
-                               seed = args.seed)
+                               seed = args.seed,
+                               epsilon = args.epsilon,
+                               decay = args.decay,
+                               momentum = args.momentum)
 
 if args.recompileOnLoad:
     model.compile(log = infStream)

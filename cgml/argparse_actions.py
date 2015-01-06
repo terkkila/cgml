@@ -1,6 +1,12 @@
 
 import argparse,random
 
+from cgml.constants import DEFAULT_ADADELTA_EPSILON
+from cgml.constants import DEFAULT_ADADELTA_DECAY
+from cgml.constants import DEFAULT_ADADELTA_MOMENTUM
+from cgml.constants import DEFAULT_MINI_BATCH_SIZE
+from cgml.constants import DEFAULT_DEVICE_BATCH_SIZE
+
 def giveArgs(log = None):
 
     parser = argparse.ArgumentParser( description = 'Machine Learning with Computational Graphs.')
@@ -64,14 +70,6 @@ def giveArgs(log = None):
         required = False)
 
     parser.add_argument(
-        '--delimiter',
-        help    = 'Field delimiter',
-        type    = str,
-        dest    = 'delimiter',
-        default = '\t',
-        required = False),
-    
-    parser.add_argument(
         '--supCostWeight',
         help = 'How much weight is given to supervised cost',
         type = float,
@@ -92,7 +90,7 @@ def giveArgs(log = None):
         help = 'Number of samples stored in device',
         type = int,
         dest = 'deviceBatchSize',
-        default = 1000,
+        default = DEFAULT_DEVICE_BATCH_SIZE,
         required = False)
     
     parser.add_argument(
@@ -100,7 +98,7 @@ def giveArgs(log = None):
         help = 'Number of samples used in device to update parameters',
         type = int,
         dest = 'miniBatchSize',
-        default = 10,
+        default = DEFAULT_MINI_BATCH_SIZE,
         required = False)
     
     parser.add_argument(
@@ -138,6 +136,27 @@ def giveArgs(log = None):
         required = False)
 
     parser.add_argument(
+        "--epsilon",
+        help = "Epsilon term for AdaDelta",
+        type = float,
+        default = DEFAULT_ADADELTA_EPSILON,
+        required = False)
+
+    parser.add_argument(
+        "--decay",
+        help = "Decay term for AdaDelta",
+        type = float,
+        default = DEFAULT_ADADELTA_DECAY,
+        required = False)
+
+    parser.add_argument(
+        "--momentum",
+        help = "Momentum term for AdaDelta",
+        type = float,
+        default = DEFAULT_ADADELTA_MOMENTUM,
+        required = False)
+
+    parser.add_argument(
         '--ensemble',
         help = 'If greater than 1, ensemble predictor will be made',
         default = 1,
@@ -165,12 +184,14 @@ def giveArgs(log = None):
         log.write(' --testData        ' + str(args.testData)        + '\n')
         log.write(' --predictions     ' + str(args.predictions)     + '\n')
         log.write(' --getImportance   ' + str(args.getImportance)   + '\n')
-        log.write(' --delimiter       ' + str(args.delimiter)       + '\n')
         log.write(' --supCostWeight   ' + str(args.supCostWeight)   + '\n')
         log.write(' --unsupCostWeight ' + str(args.unsupCostWeight) + '\n')
         log.write(' --deviceBatchSize ' + str(args.deviceBatchSize) + '\n')
         log.write(' --miniBatchSize   ' + str(args.miniBatchSize)   + '\n')
-        log.write(' --nPasses         ' + str(args.nPasses)         + '\n') 
+        log.write(' --nPasses         ' + str(args.nPasses)         + '\n')
+        log.write(' --epsilon         ' + str(args.epsilon)         + '\n')
+        log.write(' --decay           ' + str(args.decay)           + '\n')
+        log.write(' --momentum        ' + str(args.momentum)        + '\n')
         log.write(' --save            ' + str(args.save)            + '\n')
         log.write(' --load            ' + str(args.load)            + '\n')
         log.write(' --ensemble        ' + str(args.ensemble)        + '\n')

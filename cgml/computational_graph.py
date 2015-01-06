@@ -9,6 +9,10 @@ from cgml.costs import costMap
 from cgml.optimizers import Momentum,AdaDelta
 from cgml.schema import validateSchema
 from cgml.io import ppf
+from cgml.constants import DEFAULT_ADADELTA_EPSILON
+from cgml.constants import DEFAULT_ADADELTA_DECAY
+from cgml.constants import DEFAULT_ADADELTA_MOMENTUM
+from cgml.constants import DEFAULT_MINI_BATCH_SIZE
 import cPickle
 import copy
 from collections import OrderedDict
@@ -221,8 +225,9 @@ class ComputationalGraph(object):
     def __init__(self,
                  schema = None,
                  log   = None,
-                 epsilon = None,
-                 decay = None,
+                 epsilon = DEFAULT_ADADELTA_EPSILON,
+                 decay = DEFAULT_ADADELTA_DECAY,
+                 momentum = DEFAULT_ADADELTA_MOMENTUM,
                  seed = None,
                  supCostWeight = 1,
                  unsupCostWeight = 1):
@@ -233,6 +238,7 @@ class ComputationalGraph(object):
         self.unsupCostWeight = unsupCostWeight
         self.epsilon = epsilon
         self.decay = decay
+        self.momentum = momentum
 
         # Run schema validator before we do anything
         validateSchema(schema)
@@ -259,7 +265,7 @@ class ComputationalGraph(object):
             
             # Symbolic output matrix
             self.output = T.fmatrix('y')
-
+            
             
         self.y_in_device = theano.shared( value = np.asarray( [[0]],
                                                               dtype = self.targetType ) )
@@ -302,11 +308,20 @@ class ComputationalGraph(object):
 
         if log:
             log.write(" - Setting up and compiling cost functions\n")
-        self._setUpCostFunctions(self.input,self.output,self.supCostWeight,self.unsupCostWeight)
+        self._setUpCostFunctions(self.input,
+                                 self.output,
+                                 self.supCostWeight,
+                                 self.unsupCostWeight)
 
         if log:
             log.write(" - Setting up and compiling optimizers\n")
-        self._setUpOptimizers(index,miniBatchSize,self.input,self.output,self.epsilon,self.decay)
+        self._setUpOptimizers(index,
+                              miniBatchSize,
+                              self.input,
+                              self.output,
+                              self.epsilon,
+                              self.decay,
+                              self.momentum)
 
     def _setUpOutputs(self,x):
 
@@ -458,7 +473,8 @@ class ComputationalGraph(object):
                          x,
                          y,
                          epsilon,
-                         decay):
+                         decay,
+                         momentum):
 
         Optimizer = AdaDelta
 
@@ -474,7 +490,8 @@ class ComputationalGraph(object):
                 cost      = self._hybrid_cost,
                 params    = self.params,
                 epsilon   = epsilon,
-                decay     = decay)
+                decay     = decay,
+                momentum  = momentum)
 
             self.hybrid_update = theano.function(
                 inputs  = [index,miniBatchSize],
@@ -491,7 +508,8 @@ class ComputationalGraph(object):
                 cost      = self._supervised_cost,
                 params    = self.params,
                 epsilon   = epsilon,
-                decay     = decay)
+                decay     = decay,
+                momentum  = momentum)
             
             self.supervised_update = theano.function(
                 inputs  = [index,miniBatchSize],
@@ -511,14 +529,14 @@ class ComputationalGraph(object):
                 cost      = self._unsupervised_cost,
                 params    = self.params,
                 epsilon   = epsilon,
-                decay     = decay)
+                decay     = decay,
+                momentum  = momentum)
             
             self.unsupervised_update = theano.function(
                 inputs  = [index,miniBatchSize],
                 outputs = self._unsupervised_cost,
                 updates = self.unsupervised_optimizer.updates,
                 givens  = {x:self.X_in_device[index:(index+miniBatchSize)]})
-
 
             self.unsupervised_cost = theano.function(
                 inputs  = [x],
@@ -589,7 +607,7 @@ class ComputationalGraph(object):
               drTrain = None,
               x_valid = None,
               y_valid = None,
-              miniBatchSize = None,
+              miniBatchSize = DEFAULT_MINI_BATCH_SIZE,
               verbose = False,
               infStream = None):
 

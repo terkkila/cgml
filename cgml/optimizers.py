@@ -54,22 +54,15 @@ class AdaDelta(object):
     def __init__(self, 
                  cost = None,
                  params = None,
-                 epsilon = None,
-                 decay = None):
+                 epsilon = 1e-6,
+                 decay = 0.95,
+                 momentum = 0.9):
 
         if cost == None:
             raise Exception("cost is missing!")
 
         if params == None:
             raise Exception("params is missing!")
-
-        if epsilon == None:
-            epsilon = 1e-6
-
-        if decay == None:
-            decay = 0.95
-
-        momentum = 0.1
 
         self.gms = []
         self.sms = []
@@ -83,16 +76,13 @@ class AdaDelta(object):
             self.sms.append( theano.shared(value = param.zeros_like().eval()) )
 
         self.updates = []
-        
+
         for param,prevDelta,gm,sm in zip(params,
                                          self.prevDeltas,
                                          self.gms,
                                          self.sms):
 
-            #self.updates.append( (param,
-            #                      param + momentum * prevDelta) )
-            
-            #midParam = param + momentum * prevDelta
+            momentumFactor = momentum * prevDelta
 
             grad = T.grad(cost,param)
 
@@ -105,7 +95,7 @@ class AdaDelta(object):
             # Assign update rule for previous delta
             self.updates.append( (prevDelta, delta) )
 
-            param_new = param + delta + momentum * prevDelta
+            param_new = param + delta + momentumFactor
 
             self.updates.append( (param,param_new) )
 
