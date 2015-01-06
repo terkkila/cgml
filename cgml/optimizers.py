@@ -69,19 +69,30 @@ class AdaDelta(object):
         if decay == None:
             decay = 0.95
 
+        momentum = 0.1
+
         self.gms = []
         self.sms = []
 
+        # Store previous update deltas here
+        self.prevDeltas = []
+
         for param in params:
+            self.prevDeltas.append( theano.shared(value = param.zeros_like().eval()) )
             self.gms.append( theano.shared(value = param.zeros_like().eval()) )
             self.sms.append( theano.shared(value = param.zeros_like().eval()) )
 
         self.updates = []
         
-        for param,gm,sm in zip(params,
-                               self.gms,
-                               self.sms):
+        for param,prevDelta,gm,sm in zip(params,
+                                         self.prevDeltas,
+                                         self.gms,
+                                         self.sms):
 
+            #self.updates.append( (param,
+            #                      param + momentum * prevDelta) )
+            
+            #midParam = param + momentum * prevDelta
 
             grad = T.grad(cost,param)
 
@@ -89,13 +100,14 @@ class AdaDelta(object):
 
             self.updates.append( (gm,gm_new) )
             
-
             delta = - T.sqrt(sm + epsilon) / T.sqrt(gm_new + epsilon) * grad
 
-            param_new = param + delta
+            # Assign update rule for previous delta
+            self.updates.append( (prevDelta, delta) )
+
+            param_new = param + delta + momentum * prevDelta
 
             self.updates.append( (param,param_new) )
-
 
             sm_new = decay * sm + ( 1 - decay ) * delta ** 2
             

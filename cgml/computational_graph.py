@@ -593,6 +593,10 @@ class ComputationalGraph(object):
               verbose = False,
               infStream = None):
 
+        trainLog = {'batchIdx':[]
+                    'trainCost':[],
+                    'validCost':[]}
+
         nBatches = 0
 
         n = 0
@@ -620,16 +624,18 @@ class ComputationalGraph(object):
                 n += 1 
             
                 if isHybridCost:
-                    currMeanCost += self.hybrid_update(r,miniBatchSize) / n
+                    currMeanCost += (self.hybrid_update(r,miniBatchSize) - currMeanCost) / n
             
                 elif isSupCost:
-                    currMeanCost += self.supervised_update(r,miniBatchSize) / n
+                    currMeanCost += (self.supervised_update(r,miniBatchSize) - currMeanCost) / n
                 elif isUnSupCost:
-                    currMeanCost += self.unsupervised_update(r,miniBatchSize) / n
+                    currMeanCost += (self.unsupervised_update(r,miniBatchSize) - currMeanCost) / n
                 
                 if n % nTh == 0 and infStream:
                     infStream.write('Batch ' + str(nBatches) + 
                                     ', avg. train cost ' + str(currMeanCost))
+
+                    trainLog['trainCost'].append(currMeanCost)
 
                     if doValidation:
                         if isHybridCost:
@@ -649,6 +655,7 @@ class ComputationalGraph(object):
                             pMisClass = np.mean(yhat != y_valid)
                             infStream.write(', validation cost ' + str(validCost) + 
                                             ', classification error ' + str(100*pMisClass) + "%")
+                            trainLog['validCost'].append(validCost)
                         elif isUnSupCost:
                             validCost = self.unsupervised_cost(x_valid)
                             infStream.write(', validation cost ' + str(validCost))
@@ -663,6 +670,7 @@ class ComputationalGraph(object):
                     if verbose:
                         self.summarizeParams()
 
+        return trainLog
 
     @classmethod
     def loadFromFile(cls,fileName):

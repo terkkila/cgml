@@ -46,7 +46,12 @@ class DataReader(object):
         lines = []
 
         for line in self.f:
-            lines.append( json.loads(line.rstrip()) )
+
+            try:
+                lines.append( json.loads(line.rstrip()) )
+            except:
+                raise Exception("Failed to parse line as JSON: " + line)
+
             if len(lines) == batchSize:
                 break
 

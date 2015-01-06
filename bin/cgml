@@ -7,6 +7,7 @@ import theano.tensor as T
 import numpy as np
 import yaml
 import json
+import math
 
 from cgml.io import ppf
 from cgml.io import DataReader
@@ -92,15 +93,25 @@ if args.trainData or args.trainDataStream:
                              targetType = model.targetType)
 
     for passIdx in xrange(args.nPasses):
+        
+        #miniBatchSize = 2 ** passIdx 
 
-        infStream.write("Pass " + str(passIdx) + "\n")
+        #miniBatchSize = (miniBatchSize 
+        #                 if miniBatchSize < args.miniBatchSize 
+        #                 else args.miniBatchSize)
 
-        model.train(drTrain = drTrain,
-                    x_valid = xValid,
-                    y_valid = yValid,
-                    miniBatchSize = args.miniBatchSize,
-                    verbose = args.verbose,
-                    infStream = infStream)
+        infStream.write("Pass " + str(passIdx) + 
+                        " with mini-batch size " + 
+                        str(args.miniBatchSize) + "\n")
+
+        trainLog = model.train(drTrain = drTrain,
+                               x_valid = xValid,
+                               y_valid = yValid,
+                               miniBatchSize = args.miniBatchSize,
+                               verbose = args.verbose,
+                               infStream = infStream)
+
+        print trainLog
 
         if args.nPasses > 1:
             drTrain.rewind()
