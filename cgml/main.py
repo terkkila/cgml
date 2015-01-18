@@ -21,11 +21,12 @@ def resolveOutStream(args):
 
     return outStream
 
-def resolveModel(args,infStream):
+def resolveModel(args,log = None):
 
     if args.load:
 
-        infStream.write('\nLoading model from file: ' + args.load + '\n')
+        if log:
+            log.write('\nLoading model from file: ' + args.load + '\n')
         
         model = ComputationalGraph.loadFromFile(args.load)
         
@@ -33,7 +34,7 @@ def resolveModel(args,infStream):
         
         # Create the model
         model = ComputationalGraph(schema = yaml.load(open(args.cg,'r')),
-                                   log = infStream,
+                                   log = log,
                                    supCostWeight = args.supCostWeight,
                                    unsupCostWeight = args.unsupCostWeight,
                                    seed = args.seed,
@@ -42,29 +43,32 @@ def resolveModel(args,infStream):
                                    momentum = args.momentum)
         
     if args.recompileOnLoad:
-        model.compile(log = infStream)
+        model.compile(log = log)
 
-    #if model.type not in ['autoencoder']:
-    infStream.write(str(model.predict.maker.fgraph.toposort())+'\n')
+    if log:
+        log.write(str(model.predict.maker.fgraph.toposort())+'\n')
 
     # Check if GPU is being used or not
-    if np.any([isinstance(x.op, T.Elemwise) for x in model.predict.maker.fgraph.toposort()]):
-        infStream.write('No GPU found -- using CPU instead\n')
+    if log and np.any([ isinstance(x.op, T.Elemwise) 
+                        for x in model.predict.maker.fgraph.toposort()]):
+        log.write('No GPU found -- using CPU instead\n')
     else:
-        infStream.write('Found GPU -- using that whenever possible\n')
+        log.write('Found GPU -- using that whenever possible\n')
 
 
-    # Write description of the model to infStream
-    infStream.write('\n' + str(model) + '\n')
+    # Write description of the model to log streamx
+    if log:
+        log.write('\n' + str(model) + '\n')
 
     return model
 
-def resolveValidationData(args,targetType,infStream):
+def resolveValidationData(args,targetType,log = None):
 
     if args.validData:
         
-        infStream.write("Caching validation data for monitoring\n")
-        
+        if log:
+            log.write("Caching validation data for monitoring\n")
+            
         sampleIDs,xValid,yValid = DataReader(args.validData,
                                              targetType = targetType).cache()
         
@@ -85,15 +89,14 @@ def strMat(mat):
     return '\n'.join(strVec(map(strVec,row)) for row in mat)
 
 
-def startTrainingRoutine(model,args,infStream):
+def startTrainingRoutine(model,args,log = None):
 
-    sampleID,xValid,yValid = resolveValidationData(args,model.targetType,infStream)
-    
-    infStream.write('\n')
-    
+    sampleID,xValid,yValid = resolveValidationData(args,model.targetType,log = log)
+        
     if args.trainData or args.trainDataStream:
         
-        infStream.write("Starting to read input data for training\n")
+        if log:
+            log.write("Starting to read input data for training\n")
         
         if args.trainData:
             
@@ -107,35 +110,38 @@ def startTrainingRoutine(model,args,infStream):
             # Data reader from stream
             drTrain = DataReader(sys.stdin,
                                  batchSize = args.deviceBatchSize,
-                             targetType = model.targetType)
+                                 targetType = model.targetType)
             
         for passIdx in xrange(args.nPasses):
             
-            infStream.write("Pass " + str(passIdx) + 
-                            " with mini-batch size " + 
-                            str(args.miniBatchSize) + "\n")
+            if log:
+                log.write("Pass " + str(passIdx) + 
+                          " with mini-batch size " + 
+                          str(args.miniBatchSize) + "\n")
             
             trainLog = model.train(drTrain = drTrain,
                                    x_valid = xValid,
                                    y_valid = yValid,
                                    miniBatchSize = args.miniBatchSize,
                                    verbose = args.verbose,
-                                   infStream = infStream)
+                                   log = log)
             
-            print trainLog
+            if log:
+                log.write(str(trainLog) + '\n')
             
             if args.nPasses > 1:
                 drTrain.rewind()
 
+    if log:
+        log.write('\n')
 
-    infStream.write('\n')
+def startTestingRoutine(model,args,outStream,log = None):
 
-def startTestingRoutine(model,args,infStream,outStream):
-
-    infStream.write("Starting to read data for prediction\n")
+    if log:
+        log.write("Starting to read data for prediction\n")
     
-    if not args.predictions:
-        infStream.write("WARNING: no predictions file provided! Predictions will not be saved\n")
+    if not args.predictions and log:
+        log.write("WARNING: no predictions file provided! Predictions will not be saved\n")
 
     # Data reader for prediction
     drTest  = DataReader(args.testData,

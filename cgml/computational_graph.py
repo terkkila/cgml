@@ -3,6 +3,9 @@ import sys
 import numpy as np
 import theano
 import theano.tensor as T
+from cgml.graph_parsing import makeDropoutLayersFromSchema
+from cgml.graph_parsing import makeLayersFromDropoutLayers
+from cgml.graph_parsing import parseGraphFromSchema
 from cgml.layers import Layer,ConvolutionLayer
 from cgml.activations import activationMap
 from cgml.costs import costMap
@@ -51,171 +54,6 @@ class DAG(object):
 
     def getNode(self,name):
         return self.nodes[ self.name2idx[name] ]
-
-
-def makeDropoutLayersFromSchema(x,schema,rng):
-
-    schemaLayers = schema['graph']
-
-    nLayers = len(schemaLayers)
-
-    dropoutLayers = []
-    branchDropoutLayer = None
-    
-    lastOutput = x
-    lastNOut = schemaLayers[0]['n_in']
-
-    for i in xrange(nLayers):
-
-        currDropoutLayer = schema['graph'][i]
-
-        isCurrConvLayer = currDropoutLayer['activation'] == 'conv2d'
-
-        if not isCurrConvLayer:
-            
-            dropoutLayers.append( Layer(rng        = rng,
-                                        input      = lastOutput,
-                                        n_in       = lastNOut,
-                                        n_out      = currDropoutLayer['n_out'],
-                                        activation = activationMap[
-                        currDropoutLayer['activation'] ],
-                                        randomInit = True,
-                                        dropout    = currDropoutLayer['dropout'],
-                                        name       = currDropoutLayer.get('name',
-                                                                          "unnamed")) )
-            
-            
-        else:
-
-            dropoutLayers.append( ConvolutionLayer(rng          = rng,
-                                                   input        = lastOutput,
-                                                   n_in         = lastNOut,
-                                                   n_out        = currDropoutLayer['n_out'],
-                                                   activation   = activationMap[
-                        currDropoutLayer['activation'] ],
-                                                   randomInit   = True,
-                                                   dropout      = currDropoutLayer['dropout'],
-                                                   filter_width = currDropoutLayer['filter_width'],
-                                                   subsample    = currDropoutLayer['subsample'],
-                                                   maxpool      = currDropoutLayer['maxpool'],
-                                                   name         = currDropoutLayer.get('name',
-                                                                                       "unnamed")))
-
-        if currDropoutLayer.get('branch'):
-
-            assert currDropoutLayer['branch'][0]['activation'] != 'conv2d'
-
-            branchDropoutLayer = Layer(rng        = rng,
-                                       input      = lastOutput,
-                                       n_in       = lastNOut,
-                                       n_out      = currDropoutLayer['branch'][0]['n_out'],
-                                       activation = activationMap[
-                    currDropoutLayer['branch'][0]['activation'] ],
-                                       randomInit = True,
-                                       dropout    = currDropoutLayer['branch'][0]['dropout'],
-                                       name       = currDropoutLayer['branch'][0].get('name',
-                                                                                      "unnamed"))
-
-        lastOutput = dropoutLayers[-1].output
-        lastNOut   = dropoutLayers[-1].n_out
-
-    return dropoutLayers,branchDropoutLayer
-
-
-def makeLayersFromDropoutLayers(x,
-                                schema,
-                                dropoutLayers,
-                                branchDropoutLayer):
-
-    nLayers = len(dropoutLayers)
-
-    layers = []
-    branchLayer = None
-
-    lastOutput = x
-    lastNOut = dropoutLayers[0].n_in
-
-    graphHasBranch = False
-    layerHasBranch = False
-
-    for i in xrange(nLayers):
-
-        
-        layerHasBranch = (True if schema['graph'][i].get('branch') else False)
-
-        if layerHasBranch:
-            graphHasBranch = True
-
-        activationStr = schema['graph'][i]['activation']
-
-        currDropoutLayer = dropoutLayers[i]
-
-        isCurrConvLayer = schema['graph'][i]['activation'] == 'conv2d'
-        
-        q = 1 - currDropoutLayer.dropout
-        
-        if not isCurrConvLayer:
-            
-            layers.append( Layer(rng = None,
-                                 input = lastOutput,
-                                 n_in  = lastNOut,
-                                 n_out = currDropoutLayer.n_out,
-                                 activation = currDropoutLayer.activation,
-                                 W = currDropoutLayer.W * q,
-                                 b = currDropoutLayer.b,
-                                 dropout = 0,
-                                 name = currDropoutLayer.name) )
-
-            if layerHasBranch:
-                branchLayer = Layer(rng   = None,
-                                    input = lastOutput,
-                                    n_in  = lastNOut,
-                                    n_out = branchDropoutLayer.n_out,
-                                    activation = branchDropoutLayer.activation,
-                                    W = branchDropoutLayer.W * q,
-                                    b = branchDropoutLayer.b,
-                                    dropout = 0,
-                                    name = branchDropoutLayer.name)
-
-            
-        else:
-
-            layers.append( ConvolutionLayer(rng = None,
-                                            input = lastOutput,
-                                            n_in  = lastNOut,
-                                            n_out = currDropoutLayer.n_out,
-                                            activation = currDropoutLayer.activation,
-                                            W = currDropoutLayer.W * q,
-                                            dropout = 0,
-                                            filter_width = currDropoutLayer.filter_width,
-                                            subsample = currDropoutLayer.subsample,
-                                            maxpool = currDropoutLayer.maxpool,
-                                            name = currDropoutLayer.name) )
-            
-        lastOutput = layers[-1].output
-        lastNOut   = layers[-1].n_out
- 
-    return layers,branchLayer
-        
-
-def parseGraphFromSchema(x,schema,rng):
-
-    dropoutLayers,branchDropoutLayer = makeDropoutLayersFromSchema(x,
-                                                                   schema,
-                                                                   rng)
-
-    layers,branchLayer = makeLayersFromDropoutLayers(x,
-                                                     schema,
-                                                     dropoutLayers,
-                                                     branchDropoutLayer)
-    
-    if ( branchDropoutLayer != None and 
-         branchLayer != None ):
-        layers.append(branchLayer)
-        dropoutLayers.append(branchDropoutLayer)
-
-    return layers,dropoutLayers
-
 
 def percent(x):
     return '{0:3.2f}'.format(100*x) + '%'
@@ -609,7 +447,7 @@ class ComputationalGraph(object):
               y_valid = None,
               miniBatchSize = DEFAULT_MINI_BATCH_SIZE,
               verbose = False,
-              infStream = None):
+              log = None):
 
         trainLog = {'batchIdx':[],
                     'trainCost':[],
@@ -649,8 +487,8 @@ class ComputationalGraph(object):
                 elif isUnSupCost:
                     currMeanCost += (self.unsupervised_update(r,miniBatchSize) - currMeanCost) / n
                 
-                if n % nTh == 0 and infStream:
-                    infStream.write('Batch ' + str(nBatches) + 
+                if n % nTh == 0 and log:
+                    log.write('Batch ' + str(nBatches) + 
                                     ', avg. train cost ' + str(currMeanCost))
 
                     trainLog['trainCost'].append(currMeanCost)
@@ -662,7 +500,7 @@ class ComputationalGraph(object):
                             validHybCost = self.hybrid_cost(x_valid,y_valid)
                             yhat = self.predict(x_valid)
                             pMisClass = np.mean(yhat != y_valid)
-                            infStream.write(', valid.sup.cost ' + str(validSupCost) +
+                            log.write(', valid.sup.cost ' + str(validSupCost) +
                                             ', valid.unsup.cost ' + str(validUnsupCost) + 
                                             ', valid.hyb.cost ' + str(validHybCost) + 
                                             ', classification error ' + str(100*pMisClass) + "%")
@@ -671,22 +509,21 @@ class ComputationalGraph(object):
                             validCost = self.supervised_cost(x_valid,y_valid)
                             yhat = self.predict(x_valid)
                             pMisClass = np.mean(yhat != y_valid)
-                            infStream.write(', validation cost ' + str(validCost) + 
+                            log.write(', validation cost ' + str(validCost) + 
                                             ', classification error ' + str(100*pMisClass) + "%")
                             trainLog['validCost'].append(validCost)
                         elif isUnSupCost:
                             validCost = self.unsupervised_cost(x_valid)
-                            infStream.write(', validation cost ' + str(validCost))
+                            log.write(', validation cost ' + str(validCost))
                     
 
-                    infStream.write('\n')
+                    log.write('\n')
 
                     n = 0
 
                     currMeanCost = 0.0
 
-                    if verbose:
-                        self.summarizeParams()
+                    #self.summarizeParams()
 
         return trainLog
 

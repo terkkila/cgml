@@ -13,10 +13,10 @@ if __name__ == "__main__":
  
     outStream = resolveOutStream(args)
 
-    model = resolveModel(args,infStream)
+    model = resolveModel(args,log = infStream)
 
     if args.trainData or args.trainDataStream:
-        startTrainingRoutine(model,args,infStream)
+        startTrainingRoutine(model,args,log = infStream)
 
     if args.save:
     
@@ -24,8 +24,8 @@ if __name__ == "__main__":
 
         model.saveToFile(args.save)
 
-    if args.testData:
-        startTestingRoutine(model,args,infStream,outStream)
+    if args.testData and outStream:
+        startTestingRoutine(model,args,outStream, log = infStream)
 
 
 
