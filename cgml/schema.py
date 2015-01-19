@@ -93,6 +93,13 @@ def validateSchema(schema):
     if schema["type"] not in supportedModelTypes:
         raise Exception("Model type not in " + str(supportedModelTypes))
 
+    if schema.get("target-scaling"):
+        if schema["target-scaling"].get("mean",None) == None:
+            raise Exception("Target scaling defined but missing 'mean'")
+            
+        if schema["target-scaling"].get("stdev",None) == None:
+            raise Exception("Target scaling defined but missing 'stdev'")
+            
     if schema.get('supervised-cost'):
         if not schema['supervised-cost'].get('type'):
             raise Exception("Supervised cost has to have 'type'")
@@ -118,7 +125,6 @@ def validateSchema(schema):
         raise Exception("Graph in schema has no layers")
 
     if not schema.get('names'):
-        sys.stderr.write("'names' not specified => generating default ones: f0,f1,...,fk\n")
         schema['names'] = ['f{0}'.format(i) for i in xrange(np.prod(schema['graph'][0]['n_in']))]
     
     if np.prod(schema['graph'][0]['n_in']) != len(schema['names']):

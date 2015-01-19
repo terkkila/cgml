@@ -1,4 +1,7 @@
 
+from cgml.layers import Layer,ConvolutionLayer
+from cgml.activations import activationMap
+
 def makeDropoutLayersFromSchema(x,schema,rng):
 
     schemaLayers = schema['graph']

@@ -6,8 +6,6 @@ import theano.tensor as T
 from cgml.graph_parsing import makeDropoutLayersFromSchema
 from cgml.graph_parsing import makeLayersFromDropoutLayers
 from cgml.graph_parsing import parseGraphFromSchema
-from cgml.layers import Layer,ConvolutionLayer
-from cgml.activations import activationMap
 from cgml.costs import costMap
 from cgml.optimizers import Momentum,AdaDelta
 from cgml.schema import validateSchema
@@ -224,8 +222,21 @@ class ComputationalGraph(object):
                 
                 else:
                     
-                    self.predict = theano.function( inputs = [x],
-                                                    outputs = self._supervised_output )
+                    if self.schema.get("target-scaling"):
+                        mu = self.schema["target-scaling"]["mean"]
+                        sd = self.schema["target-scaling"]["stdev"]
+                        scaled_output,upd = theano.map(lambda y: theano.map(lambda yi: yi*sd + mu,
+                                                                            y), 
+                                                       self._supervised_output)
+
+                        self.predict = theano.function( inputs = [x],
+                                                        outputs = scaled_output,
+                                                        updates = upd )
+
+                    else:
+
+                        self.predict = theano.function( inputs = [x],
+                                                        outputs = self._supervised_output )
 
 
             # If we find a layer that as unsupervised cost associated with it,
@@ -302,8 +313,22 @@ class ComputationalGraph(object):
     def setTrainDataOnDevice(self,X,y):
 
         self.X_in_device.set_value(X)
-        self.y_in_device.set_value(y)
 
+        # If scaling should be applied to the target...
+        if self.schema.get("target-scaling"):
+
+            mu = self.schema["target-scaling"]["mean"]
+            sd = self.schema["target-scaling"]["stdev"]
+            
+            # Remember that y is a matrix, so we need two-dimensional map
+            standardize_value = lambda value: (value-mu)/sd
+            standardize_vec   = lambda vec: map(standardize_value,vec)
+            self.y_in_device.set_value(map(standardize_vec,y))
+
+        else:
+
+            # Otherwise just copy the 
+            self.y_in_device.set_value(y)
 
     def _setUpOptimizers(self,
                          index,
@@ -498,19 +523,17 @@ class ComputationalGraph(object):
                             validSupCost = self.supervised_cost(x_valid,y_valid)
                             validUnsupCost = self.unsupervised_cost(x_valid)
                             validHybCost = self.hybrid_cost(x_valid,y_valid)
-                            yhat = self.predict(x_valid)
-                            pMisClass = np.mean(yhat != y_valid)
+                            #yhat = self.predict(x_valid)
+                            #pMisClass = np.mean(yhat != y_valid)
                             log.write(', valid.sup.cost ' + str(validSupCost) +
                                             ', valid.unsup.cost ' + str(validUnsupCost) + 
-                                            ', valid.hyb.cost ' + str(validHybCost) + 
-                                            ', classification error ' + str(100*pMisClass) + "%")
+                                            ', valid.hyb.cost ' + str(validHybCost))
                         
                         elif isSupCost:
                             validCost = self.supervised_cost(x_valid,y_valid)
-                            yhat = self.predict(x_valid)
-                            pMisClass = np.mean(yhat != y_valid)
-                            log.write(', validation cost ' + str(validCost) + 
-                                            ', classification error ' + str(100*pMisClass) + "%")
+                            #yhat = self.predict(x_valid)
+                            #pMisClass = np.mean(yhat != y_valid)
+                            log.write(', validation cost ' + str(validCost))
                             trainLog['validCost'].append(validCost)
                         elif isUnSupCost:
                             validCost = self.unsupervised_cost(x_valid)

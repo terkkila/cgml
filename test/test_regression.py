@@ -10,6 +10,7 @@ def test_linear_regression():
               'type': 'regression',
               'supervised-cost': {'type': 'squared-error', 
                                   'name': 'scalar-out'},
+              'target-scaling': {'mean': 0, 'stdev': 1},
               'graph':
                   [{'activation':'linear',
                     'n_in':5,
@@ -42,6 +43,7 @@ def test_linear_regression():
     model.setTrainDataOnDevice(x,y)
 
     model.supervised_update(0,2)
+
 
 def test_structured_linear_regression():
 
