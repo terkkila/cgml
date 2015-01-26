@@ -115,7 +115,7 @@ def startTrainingRoutine(model,args,log = None):
         for passIdx in xrange(args.nPasses):
             
             # Incrementing mini batch size if increment is > 0
-            miniBatchSize = args.miniBatchSize + passIdx + args.miniBatchIncrement
+            miniBatchSize = args.miniBatchSize + passIdx * args.miniBatchIncrement
 
             if log:
                 log.write("Pass " + str(passIdx) + 
