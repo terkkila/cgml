@@ -494,7 +494,19 @@ class ComputationalGraph(object):
         currMeanCost = 0.0
         
         for sampleIDs,x_train,y_train in drTrain:
-            
+
+            # How many training instances there is in the device batch
+            nTrain = x_train.shape[0]
+
+            # Create randomly permuted index vector
+            ics = np.arange(nTrain)
+            np.random.shuffle(ics)
+
+            # Permute xy-pairs according to the permutation
+            x_train = x_train.take(ics,axis=0)
+            y_train = y_train.take(ics,axis=0)
+
+            # Assign the permuted training data to the device
             self.setTrainDataOnDevice(x_train,y_train)
         
             for i in xrange(deviceBatchSize/miniBatchSize):
