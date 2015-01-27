@@ -68,10 +68,19 @@ class ComputationalGraph(object):
                  supCostWeight = 1,
                  unsupCostWeight = 1):
 
-        self.meta = None
+        # Variable that counts how many training samples have been used for training so far
+        # This can be used for logging purposes 
+        self.trainingSamplesSeen = 0
+        self.checkEveryNthSamplesSeen = 100
+        self.lastSampleCheck = 0
 
         self.supCostWeight = supCostWeight
         self.unsupCostWeight = unsupCostWeight
+
+        # Optimizer parameters
+        # NOTE: optimizer is hard-coded to AdaDelta, which should be removed
+        # Instead, the optimizer should be an input argument.
+        # Another problem is that
         self.epsilon = epsilon
         self.decay = decay
         self.momentum = momentum
@@ -478,10 +487,7 @@ class ComputationalGraph(object):
                     'trainCost':[],
                     'validCost':[]}
 
-        nBatches = 0
-
         n = 0
-        nTh = 100
         
         deviceBatchSize = drTrain.batchSize
 
@@ -508,13 +514,14 @@ class ComputationalGraph(object):
 
             # Assign the permuted training data to the device
             self.setTrainDataOnDevice(x_train,y_train)
-        
+
+            n += 1
+            
             for i in xrange(deviceBatchSize/miniBatchSize):
 
                 r = np.random.randint(deviceBatchSize-miniBatchSize)
             
-                nBatches += 1
-                n += 1 
+                self.trainingSamplesSeen += miniBatchSize 
             
                 if isHybridCost:
                     currMeanCost += (self.hybrid_update(r,miniBatchSize) - currMeanCost) / n
@@ -524,8 +531,15 @@ class ComputationalGraph(object):
                 elif isUnSupCost:
                     currMeanCost += (self.unsupervised_update(r,miniBatchSize) - currMeanCost) / n
                 
-                if n % nTh == 0 and log:
-                    log.write('Batch ' + str(nBatches) + 
+                if (self.trainingSamplesSeen - self.lastSampleCheck ) > self.checkEveryNthSamplesSeen:
+                    doCheck = True
+                    self.lastSampleCheck = self.trainingSamplesSeen
+                else: 
+                    doCheck = False
+
+                if doCheck and log:
+
+                    log.write('Sample ' + str(self.trainingSamplesSeen) + 
                                     ', avg. train cost ' + str(currMeanCost))
 
                     trainLog['trainCost'].append(currMeanCost)
