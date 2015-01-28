@@ -43,6 +43,12 @@ def absCost(yhat,y):
 
     return T.mean(T.abs_(e.ravel()))
 
+def apeCost(yhat,y):
+
+    e = (y - yhat) / y
+
+    return T.mean(T.abs_(e.ravel()))
+
 def huberCost(yhat,y):
 
     delta = 1/2
@@ -62,5 +68,6 @@ costMap = {
     'squared-error': sqerrCost,
     'cross-entropy': crossEntCost,
     'absolute-error': absCost,
+    'absolute-percentage-error': apeCost,
     'huber-error': huberCost
     }
