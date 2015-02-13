@@ -4,6 +4,8 @@ supervised-cost:
   type: negative-log-likelihood
   name: class-out
 
+type: classification
+
 graph:
 
  - activation:   conv2d
@@ -13,11 +15,13 @@ graph:
    maxpool:      [2,2]
    n_out:        [2,12,12]
    dropout:      0.2
+   name:         hidden1
 
  - activation: tanh
    n_in:       288
    n_out:      300
    dropout:    0.2
+   name:       hidden2
 
  - activation: softmax
    n_in:       300

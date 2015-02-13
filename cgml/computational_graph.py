@@ -14,6 +14,7 @@ from cgml.constants import DEFAULT_ADADELTA_EPSILON
 from cgml.constants import DEFAULT_ADADELTA_DECAY
 from cgml.constants import DEFAULT_ADADELTA_MOMENTUM
 from cgml.constants import DEFAULT_MINI_BATCH_SIZE
+from cgml.constants import TARGET_TYPE
 import cPickle
 import copy
 from collections import OrderedDict
@@ -97,12 +98,15 @@ class ComputationalGraph(object):
                                                               dtype = theano.config.floatX ) )
 
         if ( schema.get("supervised-cost") and 
-             schema["supervised-cost"]["name"] in ["class-out"] ):
+             self.type == TARGET_TYPE.CLASSIFICATION ):
 
             self.targetType = np.int
 
             # Symbolic output matrix
-            self.output = T.lmatrix('y')
+            self.output = T.lvector('y')
+
+            self.y_in_device = theano.shared( value = np.asarray( [0],
+                                                                  dtype = self.targetType ) )
 
         else:
 
@@ -110,10 +114,9 @@ class ComputationalGraph(object):
             
             # Symbolic output matrix
             self.output = T.fmatrix('y')
-            
-            
-        self.y_in_device = theano.shared( value = np.asarray( [[0]],
-                                                              dtype = self.targetType ) )
+
+            self.y_in_device = theano.shared( value = np.asarray( [[0]],
+                                                                  dtype = self.targetType ) )
 
         self.seed = seed
 
@@ -221,7 +224,7 @@ class ComputationalGraph(object):
                                                     updates = upd)
                 
                 # If the target is categorical, we take argmax of the predicted probabilities
-                if self.targetType == np.int:
+                if self.type == TARGET_TYPE.CLASSIFICATION:
                     self.predict = theano.function( inputs = [x],
                                                     outputs = T.argmax(self._supervised_output,
                                                                    axis = 1).ravel() )
@@ -320,6 +323,20 @@ class ComputationalGraph(object):
 
 
     def setTrainDataOnDevice(self,X,y):
+
+        if len(X.shape) != 2:
+            raise Exception("Expecting X to be 2-dimensional, but " + str(X.shape) + 
+                            " was given")
+
+        if ( self.type == TARGET_TYPE.CLASSIFICATION and 
+             len(y.shape) != 1 ):
+            raise Exception("Expecting y to be 1-dimensional when doing classification, " + 
+                            "but " + str(y.shape) + " was given")
+
+        if ( self.type == TARGET_TYPE.REGRESSION and 
+             len(y.shape) != 2 ):
+            raise Exception("Expecting y to be 2-dimensional when doing regression, " + 
+                            "but " + str(y.shape) + " was given")
 
         self.X_in_device.set_value(X)
 
@@ -557,10 +574,13 @@ class ComputationalGraph(object):
                         
                         elif isSupCost:
                             validCost = self.supervised_cost(x_valid,y_valid)
-                            #yhat = self.predict(x_valid)
-                            #pMisClass = np.mean(yhat != y_valid)
                             log.write(', validation cost ' + str(validCost))
                             trainLog['validCost'].append(validCost)
+                            if self.schema['type'] == 'classification':
+                                yhat = self.predict(x_valid)
+                                pMisClass = np.mean(yhat != y_valid)
+                                log.write(", misclassification rate {:.3f}".format(pMisClass*100))
+                            
                         elif isUnSupCost:
                             validCost = self.unsupervised_cost(x_valid)
                             log.write(', validation cost ' + str(validCost))

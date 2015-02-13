@@ -50,7 +50,7 @@ def test_layers():
 
     assertModelWeightsMatch(model)
 
-    y_train = np.asarray([[0]]).astype(np.int)
+    y_train = np.asarray([0]).astype(np.int)
     x_train = np.asarray([range(100)]).astype(theano.config.floatX)
 
     model.setTrainDataOnDevice(x_train,y_train)
