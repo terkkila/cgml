@@ -303,6 +303,10 @@ class ComputationalGraph(object):
         self._supervised_cost = None
         self._hybrid_cost = None
         
+        self.unsupervised_cost = None
+        self.supervised_cost = None
+        self.hybrid_cost = None
+        
         if self._supervised_dropout_output:
             cost = costMap[self.schema['supervised-cost']['type']]
             self._supervised_cost = supCostWeight * cost(self._supervised_dropout_output,y)
@@ -316,7 +320,7 @@ class ComputationalGraph(object):
                                                      outputs = self._unsupervised_cost)
 
     
-        if self._supervised_cost and self._unsupervised_cost:
+        if self.supervised_cost and self.unsupervised_cost:
             self._hybrid_cost = self._supervised_cost + self._unsupervised_cost
             self.hybrid_cost = theano.function(inputs = [x,y],
                                                outputs = self._hybrid_cost)
@@ -491,6 +495,22 @@ class ComputationalGraph(object):
 
         return schemaWithWeights
 
+    def update(self,index,miniBatchSize):
+
+        if self.hybrid_update is not None:
+            updateCost = self.hybrid_update(index,miniBatchSize)
+        elif self.supervised_update is not None:
+            updateCost = self.supervised_update(index,miniBatchSize)
+        elif self.unsupervised_update is not None:
+            updateCost = self.unsupervised_update(index,miniBatchSize)
+        else:
+            raise Exception("Could not find an update function!")
+
+        if np.isinf(updateCost):
+            raise Exception("update functions returned inf!")
+
+        return updateCost
+
 
     def train(self,
               drTrain = None,
@@ -507,16 +527,19 @@ class ComputationalGraph(object):
         n = 0
         
         deviceBatchSize = drTrain.batchSize
-
-        isSupCost = self.schema.get("supervised-cost")
-        isUnSupCost = self.schema.get("unsupervised-cost")
-        isHybridCost = isSupCost and isUnSupCost
         
         doValidation = (x_valid != None and y_valid != None)
 
         currMeanCost = 0.0
         
         for sampleIDs,x_train,y_train in drTrain:
+
+            if deviceBatchSize > x_train.shape[0]:
+                if log is not None:
+                    log.write("Skipping device batch with " + str(x_train.shape[0]) + 
+                              " samples, which is less than the device batch size " + 
+                              str(deviceBatchSize) + "\n")
+                continue
 
             # How many training instances there is in the device batch
             nTrain = x_train.shape[0]
@@ -532,22 +555,16 @@ class ComputationalGraph(object):
             # Assign the permuted training data to the device
             self.setTrainDataOnDevice(x_train,y_train)
 
-            n += 1
-            
             for i in xrange(deviceBatchSize/miniBatchSize):
 
+                n += 1
+            
                 r = np.random.randint(deviceBatchSize-miniBatchSize)
             
                 self.trainingSamplesSeen += miniBatchSize 
             
-                if isHybridCost:
-                    currMeanCost += (self.hybrid_update(r,miniBatchSize) - currMeanCost) / n
-            
-                elif isSupCost:
-                    currMeanCost += (self.supervised_update(r,miniBatchSize) - currMeanCost) / n
-                elif isUnSupCost:
-                    currMeanCost += (self.unsupervised_update(r,miniBatchSize) - currMeanCost) / n
-                
+                currMeanCost += (self.update(r,miniBatchSize) - currMeanCost) / n
+
                 if (self.trainingSamplesSeen - self.lastSampleCheck ) > self.checkEveryNthSamplesSeen:
                     doCheck = True
                     self.lastSampleCheck = self.trainingSamplesSeen
@@ -562,29 +579,7 @@ class ComputationalGraph(object):
                     trainLog['trainCost'].append(currMeanCost)
 
                     if doValidation:
-                        if isHybridCost:
-                            validSupCost = self.supervised_cost(x_valid,y_valid)
-                            validUnsupCost = self.unsupervised_cost(x_valid)
-                            validHybCost = self.hybrid_cost(x_valid,y_valid)
-                            #yhat = self.predict(x_valid)
-                            #pMisClass = np.mean(yhat != y_valid)
-                            log.write(', valid.sup.cost ' + str(validSupCost) +
-                                            ', valid.unsup.cost ' + str(validUnsupCost) + 
-                                            ', valid.hyb.cost ' + str(validHybCost))
-                        
-                        elif isSupCost:
-                            validCost = self.supervised_cost(x_valid,y_valid)
-                            log.write(', validation cost ' + str(validCost))
-                            trainLog['validCost'].append(validCost)
-                            if self.schema['type'] == 'classification':
-                                yhat = self.predict(x_valid)
-                                pMisClass = np.mean(yhat != y_valid)
-                                log.write(", misclassification rate {:.3f}".format(pMisClass*100))
-                            
-                        elif isUnSupCost:
-                            validCost = self.unsupervised_cost(x_valid)
-                            log.write(', validation cost ' + str(validCost))
-                    
+                        self.printCostStatistics(x_valid,y_valid,log,trainLog)
 
                     log.write('\n')
 
@@ -595,6 +590,36 @@ class ComputationalGraph(object):
                     #self.summarizeParams()
 
         return trainLog
+
+
+    def printCostStatistics(self,x_valid,y_valid,log,trainLog):
+
+        if self.hybrid_cost is not None:
+            validSupCost = self.supervised_cost(x_valid,y_valid)
+            validUnsupCost = self.unsupervised_cost(x_valid)
+            validHybCost = self.hybrid_cost(x_valid,y_valid)
+                            #yhat = self.predict(x_valid)
+                            #pMisClass = np.mean(yhat != y_valid)
+            log.write(', valid.sup.cost ' + str(validSupCost) +
+            ', valid.unsup.cost ' + str(validUnsupCost) + 
+                      ', valid.hyb.cost ' + str(validHybCost))
+                      
+        elif self.supervised_cost is not None:
+            validCost = self.supervised_cost(x_valid,y_valid)
+            log.write(', validation cost ' + str(validCost))
+            trainLog['validCost'].append(validCost)
+            if self.schema['type'] == 'classification':
+                yhat = self.predict(x_valid)
+                pMisClass = np.mean(yhat != y_valid)
+                log.write(", misclassification rate {:.3f}".format(pMisClass*100))
+                            
+        elif self.unsupervised_cost is not None:
+            validCost = self.unsupervised_cost(x_valid)
+            log.write(', validation cost ' + str(validCost))
+            
+        else:
+            raise Exception("Could not find a cost function!")
+
 
     @classmethod
     def loadFromFile(cls,fileName):
