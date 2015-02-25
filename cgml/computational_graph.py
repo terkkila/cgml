@@ -516,16 +516,61 @@ class ComputationalGraph(object):
         return updateCost
 
 
-    # Scikit-Learn compatiblity method
-    # NOTE: should somehow be merged with the other fitting methods
-    def fit(self,X,y):
+    def update(self, 
+               X, 
+               y, 
+               nTimes = 1, 
+               miniBatchSize = None, 
+               X_valid = None,
+               y_valid = None,
+               log = None):
 
-        # Making sure y is also a matrix
-        if len(y.shape) == 1:
+        # Making sure y is also a matrix if we are not doing classification
+        if ( self.type != TARGET_TYPE.CLASSIFICATION and 
+             len(y.shape) == 1 ):
             y = y.reshape((y.shape[0],1))
             
+        # Assign the permuted training data to the device
         self.setTrainDataOnDevice(X, y, permute = True)
 
+        doValidation = (X_valid != None and y_valid != None)
+
+        deviceBatchSize = X.shape[0]
+
+        n = 0
+
+        currMeanCost = 0.0
+
+        for i in xrange(nTimes):
+
+            n += 1
+            
+            r = np.random.randint(deviceBatchSize-miniBatchSize)
+            
+            self.trainingSamplesSeen += miniBatchSize 
+            
+            currMeanCost += (self.__update(r,miniBatchSize) - currMeanCost) / n
+
+            if (self.trainingSamplesSeen - self.lastSampleCheck ) > self.checkEveryNthSamplesSeen:
+                doCheck = True
+                self.lastSampleCheck = self.trainingSamplesSeen
+            else: 
+                doCheck = False
+
+            if doCheck and log is not None:
+
+                log.write('Sample ' + str(self.trainingSamplesSeen) + 
+                          ', avg. train cost ' + str(currMeanCost))
+                
+                if doValidation:
+                    self.printCostStatistics(X_valid,y_valid,log)
+                    
+                log.write('\n')
+
+                n = 0
+                
+                currMeanCost = 0.0
+                
 
     def __permuteMiniBatch(self,x_train,y_train):
 
@@ -546,74 +591,36 @@ class ComputationalGraph(object):
 
     def train(self,
               drTrain = None,
-              x_valid = None,
+              X_valid = None,
               y_valid = None,
               miniBatchSize = DEFAULT_MINI_BATCH_SIZE,
               verbose = False,
               log = None):
 
-        trainLog = {'batchIdx':[],
-                    'trainCost':[],
-                    'validCost':[]}
-
         n = 0
         
-        doValidation = (x_valid != None and y_valid != None)
-
         currMeanCost = 0.0
         
-        for sampleIDs,x_train,y_train in drTrain:
+        for sampleIDs,X_train,y_train in drTrain:
 
-            deviceBatchSize = x_train.shape[0]
+            deviceBatchSize = X_train.shape[0]
 
-            # Assign the permuted training data to the device
-            self.setTrainDataOnDevice(x_train, y_train, permute = True)
+            nTimes = deviceBatchSize / miniBatchSize
 
-            for i in xrange(deviceBatchSize/miniBatchSize):
+            self.update(X_train, 
+                        y_train, 
+                        nTimes = nTimes, 
+                        miniBatchSize = miniBatchSize, 
+                        log = log,
+                        X_valid = X_valid,
+                        y_valid = y_valid)
 
-                n += 1
-            
-                r = np.random.randint(deviceBatchSize-miniBatchSize)
-            
-                self.trainingSamplesSeen += miniBatchSize 
-            
-                currMeanCost += (self.__update(r,miniBatchSize) - currMeanCost) / n
-
-                if (self.trainingSamplesSeen - self.lastSampleCheck ) > self.checkEveryNthSamplesSeen:
-                    doCheck = True
-                    self.lastSampleCheck = self.trainingSamplesSeen
-                else: 
-                    doCheck = False
-
-                if doCheck and log:
-
-                    log.write('Sample ' + str(self.trainingSamplesSeen) + 
-                                    ', avg. train cost ' + str(currMeanCost))
-
-                    trainLog['trainCost'].append(currMeanCost)
-
-                    if doValidation:
-                        self.printCostStatistics(x_valid,y_valid,log,trainLog)
-
-                    log.write('\n')
-
-                    n = 0
-
-                    currMeanCost = 0.0
-
-                    #self.summarizeParams()
-
-        return trainLog
-
-
-    def printCostStatistics(self,x_valid,y_valid,log,trainLog):
+    def printCostStatistics(self,x_valid,y_valid,log):
 
         if self.hybrid_cost is not None:
             validSupCost = self.supervised_cost(x_valid,y_valid)
             validUnsupCost = self.unsupervised_cost(x_valid)
             validHybCost = self.hybrid_cost(x_valid,y_valid)
-                            #yhat = self.predict(x_valid)
-                            #pMisClass = np.mean(yhat != y_valid)
             log.write(', valid.sup.cost ' + str(validSupCost) +
             ', valid.unsup.cost ' + str(validUnsupCost) + 
                       ', valid.hyb.cost ' + str(validHybCost))
@@ -621,7 +628,6 @@ class ComputationalGraph(object):
         elif self.supervised_cost is not None:
             validCost = self.supervised_cost(x_valid,y_valid)
             log.write(', validation cost ' + str(validCost))
-            trainLog['validCost'].append(validCost)
             if self.schema['type'] == 'classification':
                 yhat = self.predict(x_valid)
                 pMisClass = np.mean(yhat != y_valid)

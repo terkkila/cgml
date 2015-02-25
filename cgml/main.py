@@ -123,7 +123,7 @@ def startTrainingRoutine(model,args,log = None):
                           str(miniBatchSize) + "\n")
             
             trainLog = model.train(drTrain = drTrain,
-                                   x_valid = xValid,
+                                   X_valid = xValid,
                                    y_valid = yValid,
                                    miniBatchSize = miniBatchSize,
                                    verbose = args.verbose,
