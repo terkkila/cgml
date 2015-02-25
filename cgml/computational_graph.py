@@ -186,7 +186,7 @@ class ComputationalGraph(object):
         # We will make these callable functions
         self.encode = None
         self.decode = None
-        self.predict = None
+        self._predict = None
         self.predict_probs = None
 
         for layer,dropoutLayer in zip(self.layers,self.dropoutLayers):
@@ -223,9 +223,9 @@ class ComputationalGraph(object):
                 
                 # If the target is categorical, we take argmax of the predicted probabilities
                 if self.type == TARGET_TYPE.CLASSIFICATION:
-                    self.predict = theano.function( inputs = [x],
-                                                    outputs = T.argmax(self._supervised_output,
-                                                                   axis = 1).ravel() )
+                    self._predict = theano.function( inputs = [x],
+                                                     outputs = T.argmax(self._supervised_output,
+                                                                        axis = 1).ravel() )
                     self.predict_probs = theano.function( inputs = [x],
                                                           outputs = self._supervised_output,
                                                           allow_input_downcast = True )
@@ -239,14 +239,14 @@ class ComputationalGraph(object):
                                                                             y), 
                                                        self._supervised_output)
 
-                        self.predict = theano.function( inputs = [x],
-                                                        outputs = scaled_output,
-                                                        updates = upd )
+                        self._predict = theano.function( inputs = [x],
+                                                         outputs = scaled_output,
+                                                         updates = upd )
 
                     else:
 
-                        self.predict = theano.function( inputs = [x],
-                                                        outputs = self._supervised_output )
+                        self._predict = theano.function( inputs = [x],
+                                                         outputs = self._supervised_output )
 
 
             # If we find a layer that as unsupervised cost associated with it,
@@ -581,11 +581,16 @@ class ComputationalGraph(object):
                 log.write('\n')
 
                 n, currMeanCost = 0, 0.0
-                
+
+    def predict(self,X):
+
+        if len(X.shape) == 1:
+            X = X.reshape((1,X.shape[0]))
+
+        return self._predict(X)
 
     def __permuteMiniBatch(self,x_train,y_train):
 
-         
         # How many training instances there is in the device batch
         nTrain = x_train.shape[0]
         
