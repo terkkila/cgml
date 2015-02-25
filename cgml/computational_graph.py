@@ -547,26 +547,29 @@ class ComputationalGraph(object):
 
         deviceBatchSize = X.shape[0]
 
-        n = 0
-
-        currMeanCost = 0.0
+        n, currMeanCost = 0, 0.0
 
         for i in xrange(nTimes):
 
             n += 1
-            
+
+            # Draw a random integer to point to a mini batch in device
             r = np.random.randint(deviceBatchSize-miniBatchSize)
             
             self.trainingSamplesSeen += miniBatchSize 
             
+            # Compute the iterated mean to figure out new mean training cost as we do update
+            # the model parameters
             currMeanCost += (self.__update(r,miniBatchSize) - currMeanCost) / n
 
+            # This is for logging purposes
             if (self.trainingSamplesSeen - self.lastSampleCheck ) > self.checkEveryNthSamplesSeen:
                 doCheck = True
                 self.lastSampleCheck = self.trainingSamplesSeen
             else: 
                 doCheck = False
 
+            # If we decide to check with the validation data...
             if doCheck and log is not None:
 
                 log.write('Sample ' + str(self.trainingSamplesSeen) + 
@@ -577,9 +580,7 @@ class ComputationalGraph(object):
                     
                 log.write('\n')
 
-                n = 0
-                
-                currMeanCost = 0.0
+                n, currMeanCost = 0, 0.0
                 
 
     def __permuteMiniBatch(self,x_train,y_train):
