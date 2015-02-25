@@ -46,11 +46,11 @@ def resolveModel(args,log = None):
         model.compile(log = log)
 
     if log:
-        log.write(str(model.predict.maker.fgraph.toposort())+'\n')
+        log.write(str(model._predict.maker.fgraph.toposort())+'\n')
 
     # Check if GPU is being used or not
     if log and np.any([ isinstance(x.op, T.Elemwise) 
-                        for x in model.predict.maker.fgraph.toposort()]):
+                        for x in model._predict.maker.fgraph.toposort()]):
         log.write('No GPU found -- using CPU instead\n')
     else:
         log.write('Found GPU -- using that whenever possible\n')
