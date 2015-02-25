@@ -48,9 +48,7 @@ class DAG(object):
 
         self.childrenByIdx[parentIdx].append(childIdx)
 
-        
-
-
+    
     def getNode(self,name):
         return self.nodes[ self.name2idx[name] ]
 
@@ -152,26 +150,26 @@ class ComputationalGraph(object):
 
         if log:
             log.write(" - Setting up and compiling outputs\n")
-        self._setUpOutputs(self.input)
+        self.__setUpOutputs(self.input)
 
         if log:
             log.write(" - Setting up and compiling cost functions\n")
-        self._setUpCostFunctions(self.input,
-                                 self.output,
-                                 self.supCostWeight,
-                                 self.unsupCostWeight)
+        self.__setUpCostFunctions(self.input,
+                                  self.output,
+                                  self.supCostWeight,
+                                  self.unsupCostWeight)
 
         if log:
             log.write(" - Setting up and compiling optimizers\n")
-        self._setUpOptimizers(index,
-                              miniBatchSize,
-                              self.input,
-                              self.output,
-                              self.epsilon,
-                              self.decay,
-                              self.momentum)
+        self.__setUpOptimizers(index,
+                               miniBatchSize,
+                               self.input,
+                               self.output,
+                               self.epsilon,
+                               self.decay,
+                               self.momentum)
 
-    def _setUpOutputs(self,x):
+    def __setUpOutputs(self,x):
 
         # We will use these for supervised and unsupervised learning
         self._supervised_dropout_output = None
@@ -293,11 +291,11 @@ class ComputationalGraph(object):
 
         return finalImportance
                 
-    def _setUpCostFunctions(self,
-                            x,
-                            y,
-                            supCostWeight,
-                            unsupCostWeight):
+    def __setUpCostFunctions(self,
+                             x,
+                             y,
+                             supCostWeight,
+                             unsupCostWeight):
         
         self._unsupervised_cost = None
         self._supervised_cost = None
@@ -326,7 +324,10 @@ class ComputationalGraph(object):
                                                outputs = self._hybrid_cost)
 
 
-    def setTrainDataOnDevice(self,X,y):
+    def setTrainDataOnDevice(self, 
+                             X, 
+                             y, 
+                             permute = True):
 
         if len(X.shape) != 2:
             raise Exception("Expecting X to be 2-dimensional, but " + str(X.shape) + 
@@ -341,6 +342,9 @@ class ComputationalGraph(object):
              len(y.shape) != 2 ):
             raise Exception("Expecting y to be 2-dimensional when doing regression, " + 
                             "but " + str(y.shape) + " was given")
+
+        if permute:
+            X,y = self.__permuteMiniBatch(X,y)
 
         self.X_in_device.set_value(X)
 
@@ -360,14 +364,14 @@ class ComputationalGraph(object):
             # Otherwise just copy the 
             self.y_in_device.set_value(y)
 
-    def _setUpOptimizers(self,
-                         index,
-                         miniBatchSize,
-                         x,
-                         y,
-                         epsilon,
-                         decay,
-                         momentum):
+    def __setUpOptimizers(self,
+                          index,
+                          miniBatchSize,
+                          x,
+                          y,
+                          epsilon,
+                          decay,
+                          momentum):
 
         Optimizer = AdaDelta
 
@@ -495,7 +499,7 @@ class ComputationalGraph(object):
 
         return schemaWithWeights
 
-    def update(self,index,miniBatchSize):
+    def __update(self,index,miniBatchSize):
 
         if self.hybrid_update is not None:
             updateCost = self.hybrid_update(index,miniBatchSize)
@@ -512,6 +516,34 @@ class ComputationalGraph(object):
         return updateCost
 
 
+    # Scikit-Learn compatiblity method
+    # NOTE: should somehow be merged with the other fitting methods
+    def fit(self,X,y):
+
+        # Making sure y is also a matrix
+        if len(y.shape) == 1:
+            y = y.reshape((y.shape[0],1))
+            
+        self.setTrainDataOnDevice(X, y, permute = True)
+
+
+    def __permuteMiniBatch(self,x_train,y_train):
+
+         
+        # How many training instances there is in the device batch
+        nTrain = x_train.shape[0]
+        
+        # Create randomly permuted index vector
+        ics = np.arange(nTrain)
+        np.random.shuffle(ics)
+        
+        # Permute xy-pairs according to the permutation
+        x_train = x_train.take(ics,axis=0)
+        y_train = y_train.take(ics,axis=0)
+
+        return x_train,y_train
+
+
     def train(self,
               drTrain = None,
               x_valid = None,
@@ -526,34 +558,16 @@ class ComputationalGraph(object):
 
         n = 0
         
-        deviceBatchSize = drTrain.batchSize
-        
         doValidation = (x_valid != None and y_valid != None)
 
         currMeanCost = 0.0
         
         for sampleIDs,x_train,y_train in drTrain:
 
-            if deviceBatchSize > x_train.shape[0]:
-                if log is not None:
-                    log.write("Skipping device batch with " + str(x_train.shape[0]) + 
-                              " samples, which is less than the device batch size " + 
-                              str(deviceBatchSize) + "\n")
-                continue
-
-            # How many training instances there is in the device batch
-            nTrain = x_train.shape[0]
-
-            # Create randomly permuted index vector
-            ics = np.arange(nTrain)
-            np.random.shuffle(ics)
-
-            # Permute xy-pairs according to the permutation
-            x_train = x_train.take(ics,axis=0)
-            y_train = y_train.take(ics,axis=0)
+            deviceBatchSize = x_train.shape[0]
 
             # Assign the permuted training data to the device
-            self.setTrainDataOnDevice(x_train,y_train)
+            self.setTrainDataOnDevice(x_train, y_train, permute = True)
 
             for i in xrange(deviceBatchSize/miniBatchSize):
 
@@ -563,7 +577,7 @@ class ComputationalGraph(object):
             
                 self.trainingSamplesSeen += miniBatchSize 
             
-                currMeanCost += (self.update(r,miniBatchSize) - currMeanCost) / n
+                currMeanCost += (self.__update(r,miniBatchSize) - currMeanCost) / n
 
                 if (self.trainingSamplesSeen - self.lastSampleCheck ) > self.checkEveryNthSamplesSeen:
                     doCheck = True
