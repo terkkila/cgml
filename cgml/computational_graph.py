@@ -519,12 +519,22 @@ class ComputationalGraph(object):
     def update(self, 
                X, 
                y, 
-               nTimes = 1, 
+               nTimes = None,
                miniBatchSize = None, 
                X_valid = None,
                y_valid = None,
                log = None):
 
+        # By default do as many updates as there are samples
+        if nTimes is None:
+            nTimes = X.shape[0]
+
+        # Assign some plausible default value to mini batch size 
+        if miniBatchSize is None:
+            miniBatchSize = (DEFAULT_MINI_BATCH_SIZE 
+                             if DEFAULT_MINI_BATCH_SIZE > X.shape[0] 
+                             else X.shape[0])
+            
         # Making sure y is also a matrix if we are not doing classification
         if ( self.type != TARGET_TYPE.CLASSIFICATION and 
              len(y.shape) == 1 ):
