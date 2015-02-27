@@ -13,6 +13,6 @@ def _make_camelcase(name):
     camelName = copy.deepcopy(name)
     
     for elem in r.findall(name):
-        camelName = name.replace(elem,elem[1].upper())
+        camelName = camelName.replace(elem,elem[1].upper())
 
     return camelName
