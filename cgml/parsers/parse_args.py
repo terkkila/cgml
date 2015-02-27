@@ -8,7 +8,7 @@ from cgml.constants import DEFAULT_MINI_BATCH_SIZE
 from cgml.constants import DEFAULT_MINI_BATCH_INCREMENT
 from cgml.constants import DEFAULT_DEVICE_BATCH_SIZE
 
-def giveArgs(log = None):
+def parseArgs(log = None):
 
     parser = argparse.ArgumentParser( description = 'Machine Learning with Computational Graphs.')
 
@@ -228,13 +228,4 @@ def giveArgs(log = None):
         raise Exception("--ensemble cannot be smaller than 1")
 
     return args
-
-
-
-
-
-
-
-
-
 

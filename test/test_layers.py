@@ -2,7 +2,7 @@
 import numpy as np
 import theano
 import theano.tensor as T
-from cgml.computational_graph import ComputationalGraph
+from cgml.graph import ComputationalGraph
 
 def assertModelWeightsMatch(model):
 

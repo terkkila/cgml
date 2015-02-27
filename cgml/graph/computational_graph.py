@@ -3,9 +3,9 @@ import sys
 import numpy as np
 import theano
 import theano.tensor as T
-from cgml.graph_parsing import makeDropoutLayersFromSchema
-from cgml.graph_parsing import makeLayersFromDropoutLayers
-from cgml.graph_parsing import parseGraphFromSchema
+from cgml.graph import makeDropoutLayersFromSchema
+from cgml.graph import makeLayersFromDropoutLayers
+from cgml.graph import parseGraphFromSchema
 from cgml.costs import costMap
 from cgml.optimizers import Momentum,AdaDelta
 from cgml.schema import validateSchema

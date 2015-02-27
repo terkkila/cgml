@@ -6,7 +6,7 @@ import numpy as np
 import math
 import theano.tensor as T
 
-from cgml.computational_graph import ComputationalGraph
+from cgml.graph import ComputationalGraph
 from cgml.io import ppf
 from cgml.io import DataReader
 

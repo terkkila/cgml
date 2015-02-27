@@ -3,8 +3,8 @@ import theano
 import theano.tensor as T
 
 from cgml.optimizers import Momentum,AdaDelta
-from cgml.computational_graph import ComputationalGraph
-from cgml.data import makeShared
+from cgml.graph import ComputationalGraph
+from cgml.layers.base import _make_shared
 
 import numpy as np
 
@@ -35,8 +35,8 @@ def test_adadelta_logreg():
 
     x = T.fvector('x')
     y = T.fscalar('y')
-    w = makeShared([1.0,1.0],name='w')
-    b = makeShared([1.0],name='b')
+    w = _make_shared([1.0,1.0],name='w')
+    b = _make_shared([1.0],name='b')
     yhat = 1.0 / ( 1.0 + T.exp( - T.dot(x,w) - b ) )
 
     e = y - yhat

@@ -63,11 +63,3 @@ def huberCost(yhat,y):
 
     return l.sum()
 
-costMap = {
-    'negative-log-likelihood': nllCost,
-    'squared-error': sqerrCost,
-    'cross-entropy': crossEntCost,
-    'absolute-error': absCost,
-    'absolute-percentage-error': apeCost,
-    'huber-error': huberCost
-    }

@@ -2,7 +2,7 @@
 import theano
 import theano.tensor as T
 import numpy as np
-from cgml.computational_graph import ComputationalGraph
+from cgml.graph import ComputationalGraph
 
 def test_linear_regression():
 

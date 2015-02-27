@@ -2,8 +2,26 @@
 import numpy as np
 import theano
 import theano.tensor as T
+#import theano.tensor.shared_randomstreams
 
-def makeImagesFromVectors(x,size=None):
+
+def _dropout_from_layer_input(input = None,
+                              p     = None,
+                              rng   = None):
+    """p is the probablity of dropping a unit
+    """
+    srng = theano.tensor.shared_randomstreams.RandomStreams(rng.randint(999999))
+    # p=1-p because 1's indicate keep and p is prob of dropping
+    mask = srng.binomial(n    = 1,
+                         p    = 1 - p,
+                         size = input.shape)
+    # The cast is important because
+    # int * float32 = float64 which pulls things off the gpu
+    dropoutInput = T.cast(input * mask, theano.config.floatX)
+    return dropoutInput
+
+        
+def _make_images_from_vectors(x,size=None):
 
     return T.reshape(x,(x.shape[0],
                         1,
@@ -11,13 +29,13 @@ def makeImagesFromVectors(x,size=None):
                         size[1]))
 
 
-def makeVectorsFromImages(x):
+def _make_vectors_from_images(x):
 
     return T.reshape(x,(x.shape[0],
                         T.prod(x.shape[1:])))
 
     
-def makeShared(data, borrow = True, name = None):
+def _make_shared(data, borrow = True, name = None):
     """ Function that loads the dataset into shared variables
     
     The reason we store our dataset in shared variables is to allow
@@ -32,11 +50,11 @@ def makeShared(data, borrow = True, name = None):
                          name = name)
 
     
-def makeWeightMatrix(rng        = None,
-                     n_in       = None,
-                     n_out      = None,
-                     activation = None,
-                     randomInit = True):
+def _make_weight_matrix(rng        = None,
+                        n_in       = None,
+                        n_out      = None,
+                        activation = None,
+                        randomInit = True):
     
     # `W` is initialized with `W_values` which is uniformely sampled
     # from sqrt(-6./(n_in+n_hidden)) and sqrt(6./(n_in+n_hidden))
@@ -66,19 +84,19 @@ def makeWeightMatrix(rng        = None,
     
     return W_values
 
-def makeConvolutionFilters(rng = None,
-                           n_filters_in = None,
-                           n_filters_out = None,
-                           filter_width = None,
-                           randomInit = True):
+def _make_convolution_filters(rng = None,
+                              n_filters_in = None,
+                              n_filters_out = None,
+                              filter_width = None,
+                              randomInit = True):
 
     W_values = []
     
     for i in xrange(n_filters_in*n_filters_out):
-        W_values.append( makeWeightMatrix(rng = rng,
-                                          n_in = filter_width[0],
-                                          n_out = filter_width[1],
-                                          randomInit = randomInit) )
+        W_values.append( _make_weight_matrix(rng = rng,
+                                             n_in = filter_width[0],
+                                             n_out = filter_width[1],
+                                             randomInit = randomInit) )
     
     return np.asarray(W_values).reshape((n_filters_out,
                                          n_filters_in,
@@ -86,11 +104,11 @@ def makeConvolutionFilters(rng = None,
                                          filter_width[1]))
 
 
-def makeBiasVector(rng        = None,
-                   n_in       = None,
-                   n_out      = None,
-                   activation = None,
-                   randomInit = True):
+def _make_bias_vector(rng        = None,
+                      n_in       = None,
+                      n_out      = None,
+                      activation = None,
+                      randomInit = True):
     
 
     if randomInit:
@@ -105,6 +123,16 @@ def makeBiasVector(rng        = None,
         b_values = np.zeros((n_out,), dtype = theano.config.floatX)
 
     return b_values
+
+
+
+
+
+        
+
+
+        
+
 
 
 
