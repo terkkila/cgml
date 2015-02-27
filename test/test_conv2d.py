@@ -2,6 +2,8 @@
 import theano
 import theano.tensor as T
 import numpy as np
+
+from cgml.activations import conv2d
 from cgml.graph import ComputationalGraph
 from cgml.layers.base import _make_images_from_vectors
 from cgml.layers.base import _make_convolution_filters
@@ -12,9 +14,9 @@ def test_conv2d():
     x2_sym = T.fmatrix('x2')
     filters_sym = T.tensor4('filters1_sym')
 
-    f_sym = T.nnet.conv2d( _make_images_from_vectors(x2_sym,size=(3,3)),
-                           filters_sym,
-                           border_mode = 'valid')
+    f_sym = conv2d( _make_images_from_vectors(x2_sym,size=(3,3)),
+                    filters_sym,
+                    border_mode = 'valid')
 
     
     f = theano.function( inputs  = [x2_sym,filters_sym],

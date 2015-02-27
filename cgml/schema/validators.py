@@ -1,7 +1,7 @@
 
 import math
 import theano.tensor as T
-from cgml.activations import activationMap
+from cgml.parsers import parseActivation
 from cgml.costs import costMap
 import sys
 import numpy as np
@@ -153,9 +153,10 @@ def validateSchema(schema):
         if not layer.get('activation'):
             raise Exception("Layer " + str(layer) + " is missing 'activation'")
 
-        if layer['activation'] not in activationMap.keys():
-            raise Exception("Activation of the layer " + str(layer) + " is not of allowed type: " + 
-                            str(activationMap.keys()))
+        try:
+            activation = parseActivation(layer['activation'])
+        except Exception,e:
+            raise Exception("Activation '" + layer['activation'] + "' could not be parsed")
 
         if layer['activation'] == 'conv2d':
             convLayers.append(True)

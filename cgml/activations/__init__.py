@@ -1,3 +1,2 @@
 
-from .activations import linrect
-from .activation_map import activationMap
+from .activations import linrect,sigmoid,tanh,softmax,conv2d,linear

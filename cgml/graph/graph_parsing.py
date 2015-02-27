@@ -1,6 +1,6 @@
 
 from cgml.layers import Layer,ConvolutionLayer
-from cgml.activations import activationMap
+from cgml.parsers import parseActivation
 
 def makeDropoutLayersFromSchema(x,schema,rng):
 
@@ -26,8 +26,8 @@ def makeDropoutLayersFromSchema(x,schema,rng):
                                         input      = lastOutput,
                                         n_in       = lastNOut,
                                         n_out      = currDropoutLayer['n_out'],
-                                        activation = activationMap[
-                        currDropoutLayer['activation'] ],
+                                        activation = parseActivation( \
+                        currDropoutLayer['activation']),
                                         randomInit = True,
                                         dropout    = currDropoutLayer['dropout'],
                                         name       = currDropoutLayer.get('name',
@@ -40,8 +40,8 @@ def makeDropoutLayersFromSchema(x,schema,rng):
                                                    input        = lastOutput,
                                                    n_in         = lastNOut,
                                                    n_out        = currDropoutLayer['n_out'],
-                                                   activation   = activationMap[
-                        currDropoutLayer['activation'] ],
+                                                   activation   = parseActivation( \
+                        currDropoutLayer['activation'] ),
                                                    randomInit   = True,
                                                    dropout      = currDropoutLayer['dropout'],
                                                    filter_width = currDropoutLayer['filter_width'],
@@ -58,8 +58,8 @@ def makeDropoutLayersFromSchema(x,schema,rng):
                                        input      = lastOutput,
                                        n_in       = lastNOut,
                                        n_out      = currDropoutLayer['branch'][0]['n_out'],
-                                       activation = activationMap[
-                    currDropoutLayer['branch'][0]['activation'] ],
+                                       activation = parseActivation( \
+                    currDropoutLayer['branch'][0]['activation'] ),
                                        randomInit = True,
                                        dropout    = currDropoutLayer['branch'][0]['dropout'],
                                        name       = currDropoutLayer['branch'][0].get('name',
