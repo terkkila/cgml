@@ -1,3 +1,3 @@
 
-from .costs import *
-from .cost_map import costMap
+from .costs import negativeLogLikelihood,squaredError,\
+    crossEntropy,absoluteError,absolutePercentageError,huberError

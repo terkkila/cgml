@@ -6,7 +6,7 @@ import theano.tensor as T
 from cgml.graph import makeDropoutLayersFromSchema
 from cgml.graph import makeLayersFromDropoutLayers
 from cgml.graph import parseGraphFromSchema
-from cgml.costs import costMap
+from cgml.parsers import parseCost
 from cgml.optimizers import Momentum,AdaDelta
 from cgml.schema import validateSchema
 from cgml.io import ppf
@@ -306,13 +306,13 @@ class ComputationalGraph(object):
         self.hybrid_cost = None
         
         if self._supervised_dropout_output:
-            cost = costMap[self.schema['supervised-cost']['type']]
+            cost = parseCost( self.schema['supervised-cost']['type'] )
             self._supervised_cost = supCostWeight * cost(self._supervised_dropout_output,y)
             self.supervised_cost = theano.function(inputs = [x,y],
                                                    outputs = self._supervised_cost)
 
         if self._unsupervised_dropout_output:
-            cost = costMap[self.schema['unsupervised-cost']['type']]
+            cost = parseCost( self.schema['unsupervised-cost']['type'] )
             self._unsupervised_cost = unsupCostWeight * cost(self._unsupervised_dropout_output,x)
             self.unsupervised_cost = theano.function(inputs = [x],
                                                      outputs = self._unsupervised_cost)

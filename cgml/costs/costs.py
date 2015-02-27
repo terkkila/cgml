@@ -3,8 +3,7 @@ import theano.tensor as T
 import numpy as np
 from theano.ifelse import ifelse
 
-
-def nllCost(yhat, y):
+def negativeLogLikelihood(yhat, y):
     """Calculates the negative log-likelihood between
     the class probabilities and true class labels.
     """
@@ -15,16 +14,7 @@ def nllCost(yhat, y):
     # syntax to retrieve the log-probability of the correct labels, y.
     return -T.mean(T.log(yhat)[T.arange(y.shape[0]),y])
 
-    
-def sqerrCost_old(yhat, y):
-
-    # Error
-    e = y - yhat
-
-    # Squared error
-    return( T.mean(T.diagonal(T.dot(e,e.T))) )
-
-def sqerrCost(yhat, y):
+def squaredError(yhat, y):
 
     # Error
     e = y - yhat
@@ -33,23 +23,23 @@ def sqerrCost(yhat, y):
     return( T.mean(T.mean(e*e)) )
 
 
-def crossEntCost(yhat,y):
+def crossEntropy(yhat,y):
     return T.mean(-T.mean(y * T.log(yhat) + (1 - y) * T.log(1 - yhat), axis=1))
 
 
-def absCost(yhat,y):
+def absoluteError(yhat,y):
 
     e = y - yhat
 
     return T.mean(T.abs_(e.ravel()))
 
-def apeCost(yhat,y):
+def absolutePercentageError(yhat,y):
 
     e = (y - yhat) / y
 
     return T.mean(T.abs_(e.ravel()))
 
-def huberCost(yhat,y):
+def huberError(yhat,y):
 
     delta = 1/2
 

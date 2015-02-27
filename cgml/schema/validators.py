@@ -1,8 +1,7 @@
 
 import math
 import theano.tensor as T
-from cgml.parsers import parseActivation
-from cgml.costs import costMap
+from cgml.parsers import parseActivation,parseCost
 import sys
 import numpy as np
 
@@ -105,16 +104,21 @@ def validateSchema(schema):
             raise Exception("Supervised cost has to have 'type'")
         if not schema['supervised-cost'].get('name'):
             raise Exception("Supervised cost has to have 'name' to match with layer name")
-        if schema['supervised-cost']['type'] not in costMap.keys():
-            raise Exception("The type of supervised cost has to be in: " + str(costMap.keys()))
+
+        try:
+            parseCost(schema['supervised-cost']['type'])
+        except:
+            raise Exception("Could not parse cost function with identifier '" + schema['supervised-cost']['type'] + "'")
 
     if schema.get('unsupervised-cost'):
         if not schema['unsupervised-cost'].get('type'):
             raise Exception("Unsupervised cost has to have 'type'")
         if not schema['unsupervised-cost'].get('name'):
             raise Exception("Unsupervised cost has to have 'name' to match with layer name")
-        if schema['unsupervised-cost']['type'] not in costMap.keys():
-            raise Exception("The type of unsupervised cost has to be in: " + str(costMap.keys()))
+        try:
+            parseCost(schema['unsupervised-cost']['type'])
+        except:
+            raise Exception("Could not parse cost function with identifier '" + schema['supervised-cost']['type'] + "'")
 
     if not schema.get('graph'):
         raise Exception("Schema does not have field 'graph'")

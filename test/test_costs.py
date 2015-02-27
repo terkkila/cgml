@@ -2,14 +2,14 @@
 import theano
 import theano.tensor as T
 import numpy as np
-from cgml.costs import sqerrCost,absCost,nllCost
+from cgml.costs import squaredError,absoluteError,negativeLogLikelihood
 
 def test_squared_error_cost():
 
     ySym,yhatSym = T.fmatrices('y','yhat')
 
     sqerr = theano.function([yhatSym,ySym],
-                            outputs=sqerrCost(yhatSym,ySym))
+                            outputs=squaredError(yhatSym,ySym))
 
     yhat = np.asarray([[1],[2],[3]],dtype=theano.config.floatX)
     y = np.asarray([[1],[2],[3]],dtype=theano.config.floatX)
@@ -26,7 +26,7 @@ def test_abs_cost():
     ySym,yhatSym = T.fmatrices('y','yhat')
 
     ac = theano.function([yhatSym,ySym],
-                         outputs=absCost(yhatSym,ySym))
+                         outputs=absoluteError(yhatSym,ySym))
     
     yhat = np.asarray([[1],[2],[3]],dtype=theano.config.floatX)
     y = np.asarray([[1],[2],[3]],dtype=theano.config.floatX)
@@ -44,7 +44,7 @@ def test_nll_cost():
     ySym = T.lvector('y')
 
     nllc = theano.function([yhatSym,ySym],
-                           outputs=nllCost(yhatSym,ySym))
+                           outputs=negativeLogLikelihood(yhatSym,ySym))
     
     yhat = np.asarray([[0,1,0],[0,0,1]],dtype=theano.config.floatX)
     y = np.asarray([1,2],dtype=np.int)
