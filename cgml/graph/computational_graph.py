@@ -8,7 +8,7 @@ from cgml.graph import makeLayersFromDropoutLayers
 from cgml.graph import parseGraphFromSchema
 from cgml.parsers import parseCost
 from cgml.optimizers import Momentum,AdaDelta
-from cgml.schema import validateSchema
+from cgml.validators import validateSchema
 from cgml.io import ppf
 from cgml.constants import DEFAULT_ADADELTA_EPSILON
 from cgml.constants import DEFAULT_ADADELTA_DECAY
