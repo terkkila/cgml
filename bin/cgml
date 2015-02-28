@@ -2,14 +2,14 @@
 
 import sys
 
-from cgml.argparse_actions import giveArgs
+from cgml.parsers import parseArgs
 from cgml.main import resolveOutStream,resolveModel,startTrainingRoutine,startTestingRoutine
 
 if __name__ == "__main__":
 
     infStream = sys.stderr
 
-    args = giveArgs(log = infStream)
+    args = parseArgs(log = infStream)
  
     outStream = resolveOutStream(args)
 
