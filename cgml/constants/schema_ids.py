@@ -5,13 +5,15 @@ class SCHEMA_IDS(object):
     GRAPH = "graph"
 
     LAYER_NAME = "name"
+    LAYER_N_IN = "n_in"
+    LAYER_N_OUT = "n_out"
+    LAYER_DROPOUT = "dropout"
+    LAYER_ACTIVATION = "activation"
 
     FEATURE_NAMES = "names"
 
     FILTER_WIDTH = "filter_width"
     DESCRIPTION = "description"
-    N_IN = "n_in"
-    N_OUT = "n_out"
 
     SUBSAMPLE = "subsample"
     MAX_POOL = "maxpool"

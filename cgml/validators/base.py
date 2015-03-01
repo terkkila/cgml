@@ -20,8 +20,8 @@ def _validate_convolution_layer(layer):
         raise Exception(whenConv+", 'filter_width' must be a list with two integers: "+
                         "filter x- and y- dimensions")
         
-    if ( type(layer[SID.N_IN]) != list or
-         len(layer[SID.N_IN]) != 3 ):
+    if ( type(layer[SID.LAYER_N_IN]) != list or
+         len(layer[SID.LAYER_N_IN]) != 3 ):
         raise Exception(whenConv+", 'n_in' must be a list with three integers: "+
                         "number of filters and x- and y- dimensions")
     
@@ -46,17 +46,17 @@ def _validate_convolution_layer(layer):
                         "amount of maxpoolin in x- and y- dimensions")
     
 
-    if ( type(layer[SID.N_OUT]) != list or
-         len(layer[SID.N_OUT]) != 3 ):
-        raise Exception(whenConv+", '"+SID.N_OUT+"' must be a list with three integers: "+
+    if ( type(layer[SID.LAYER_N_OUT]) != list or
+         len(layer[SID.LAYER_N_OUT]) != 3 ):
+        raise Exception(whenConv+", '"+SID.LAYER_N_OUT+"' must be a list with three integers: "+
                         "number of filters and x- and y- dimensions")
 
-    if ( layer[SID.N_OUT][1] != (layer[SID.N_IN][1] - layer[SID.FILTER_WIDTH][0] + 1) / 
+    if ( layer[SID.LAYER_N_OUT][1] != (layer[SID.LAYER_N_IN][1] - layer[SID.FILTER_WIDTH][0] + 1) / 
          (layer[SID.SUBSAMPLE][0] * layer[SID.MAX_POOL][0]) ):
         raise Exception(whenConv+", 1st output dimensions should be "+
                         "'(n_in - filter_width + 1)/subsample'")
 
-    if ( layer[SID.N_OUT][2] != (layer[SID.N_IN][2] - layer[SID.FILTER_WIDTH][1] + 1) / 
+    if ( layer[SID.LAYER_N_OUT][2] != (layer[SID.LAYER_N_IN][2] - layer[SID.FILTER_WIDTH][1] + 1) / 
          (layer[SID.SUBSAMPLE][1] * layer[SID.MAX_POOL][1]) ):
         raise Exception(whenConv+", 2nd output dimensions should be "+
                         "'(n_in - filter_width + 1)/(subsample*maxpool)'")
@@ -67,8 +67,8 @@ def _validate_convolution_layer(layer):
 
 def _validate_regular_layer(layer):
 
-    if layer[SID.N_IN] <= 0:
-        raise Exception("Layer " + str(layer) + " must have positive number of " + SID.N_IN)
+    if layer[SID.LAYER_N_IN] <= 0:
+        raise Exception("Layer " + str(layer) + " must have positive number of " + SID.LAYER_N_IN)
 
-    if layer[SID.N_OUT] <= 0:
-        raise Exception("Layer " + str(layer) + " must have positive number of " + SID.N_OUT)
+    if layer[SID.LAYER_N_OUT] <= 0:
+        raise Exception("Layer " + str(layer) + " must have positive number of " + SID.LAYER_N_OUT)

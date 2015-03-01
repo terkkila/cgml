@@ -70,9 +70,9 @@ def validateSchema(schema):
 
     if not schema.get(SID.FEATURE_NAMES):
         schema[SID.FEATURE_NAMES] = ['f{0}'.format(i) 
-                                     for i in xrange(np.prod(schema[SID.GRAPH][0][SID.N_IN]))]
+                                     for i in xrange(np.prod(schema[SID.GRAPH][0][SID.LAYER_N_IN]))]
     
-    if np.prod(schema[SID.GRAPH][0][SID.N_IN]) != len(schema[SID.FEATURE_NAMES]):
+    if np.prod(schema[SID.GRAPH][0][SID.LAYER_N_IN]) != len(schema[SID.FEATURE_NAMES]):
         raise Exception("'{0}' ".format(SID.FEATURE_NAMES)+
                         "does not have same length as the number of inputs")
 
@@ -82,11 +82,11 @@ def validateSchema(schema):
 
     for i,layer in zip(xrange(nLayers),schema[SID.GRAPH]):
 
-        if not layer.get(SID.N_IN):
-            raise Exception("Layer " + str(layer) + " is missing '{0}'".format(SID.N_IN))
+        if not layer.get(SID.LAYER_N_IN):
+            raise Exception("Layer " + str(layer) + " is missing '{0}'".format(SID.LAYER_N_IN))
 
-        if not layer.get(SID.N_OUT):
-            raise Exception("Layer " + str(layer) + " is missing '{0}'".format(SID.N_OUT))
+        if not layer.get(SID.LAYER_N_OUT):
+            raise Exception("Layer " + str(layer) + " is missing '{0}'".format(SID.LAYER_N_OUT))
 
         if not layer.get(SID.LAYER_NAME):
             raise Exception("Layer " + str(layer) + " is missing '{0}'".format(SID_LAYER_NAME))
