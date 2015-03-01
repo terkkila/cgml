@@ -1,2 +1,2 @@
 
-from .validators import validateSchema
+from .validate_schema import validateSchema
