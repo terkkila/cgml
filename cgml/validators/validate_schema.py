@@ -26,62 +26,70 @@ def validateSchema(schema):
         raise Exception("Model type '{0}'not in {1}".format(schema[SID.MODEL_TYPE],
                                                             SID.SUPPORTED_MODEL_TYPES))
 
-    if schema.get("target-scaling"):
-        if schema["target-scaling"].get("mean",None) == None:
-            raise Exception("Target scaling defined but missing 'mean'")
+    if schema.get(SID.TARGET_SCALING):
+        if schema[SID.TARGET_SCALING].get(SID.TARGET_SCALING_MEAN,None) == None:
+            raise Exception("Target scaling defined but "+
+                            "missing '{0}'".format(SID.TARGET_SCALING_MEAN))
             
-        if schema["target-scaling"].get("stdev",None) == None:
-            raise Exception("Target scaling defined but missing 'stdev'")
+        if schema[SID.TARGET_SCALING].get(SID.TARGET_SCALING_STDEV,None) == None:
+            raise Exception("Target scaling defined but "+
+                            "missing '{0}'".format(SID.TARGET_SCAING_STDEV))
             
-    if schema.get('supervised-cost'):
-        if not schema['supervised-cost'].get('type'):
-            raise Exception("Supervised cost has to have 'type'")
-        if not schema['supervised-cost'].get('name'):
-            raise Exception("Supervised cost has to have 'name' to match with layer name")
+    if schema.get(SID.SUPERVISED_COST):
+        if not schema[SID.SUPERVISED_COST].get(SID.COST_TYPE):
+            raise Exception("Supervised cost has to have '{0}'".format(COST_TYPE))
+        if not schema[SID.SUPERVISED_COST].get(SID.COST_NAME):
+            raise Exception("Supervised cost has to have '{0}' ".format(SID.COST_NAME)
+                            +"to match with layer name")
 
         try:
-            parseCost(schema['supervised-cost']['type'])
+            parseCost(schema[SID.SUPERVISED_COST][SID.COST_TYPE])
         except:
-            raise Exception("Could not parse cost function with identifier '" + schema['supervised-cost']['type'] + "'")
+            raise Exception("Could not parse cost function with identifier "+
+                            "'{0}'".format(schema[SID.SUPERVISED_COST][SID.COST_TYPE]))
 
-    if schema.get('unsupervised-cost'):
-        if not schema['unsupervised-cost'].get('type'):
-            raise Exception("Unsupervised cost has to have 'type'")
-        if not schema['unsupervised-cost'].get('name'):
-            raise Exception("Unsupervised cost has to have 'name' to match with layer name")
+    if schema.get(SID.UNSUPERVISED_COST):
+        if not schema[SID.UNSUPERVISED_COST].get(SID.COST_TYPE):
+            raise Exception("Unsupervised cost has to have '{0}'".format(SID.COST_TYPE))
+        if not schema[SID.UNSUPERVISED_COST].get(SID.COST_NAME):
+            raise Exception("Unsupervised cost has to have "+
+                            "'{0}' to match with layer name".format(SID.COST_NAME))
         try:
-            parseCost(schema['unsupervised-cost']['type'])
+            parseCost(schema[SID.UNSUPERVISED_COST][SID.COST_TYPE])
         except:
-            raise Exception("Could not parse cost function with identifier '" + schema['supervised-cost']['type'] + "'")
+            raise Exception("Could not parse cost function with identifier '" + 
+                            schema[SID.UNSUPERVISED_COST][SID.COST_TYPE] + "'")
 
-    if not schema.get('graph'):
-        raise Exception("Schema does not have field 'graph'")
+    if not schema.get(SID.GRAPH):
+        raise Exception("Schema does not have field '{}'".format(SID.GRAPH))
 
-    nLayers = len(schema['graph'])
+    nLayers = len(schema[SID.GRAPH])
 
     if nLayers == 0:
         raise Exception("Graph in schema has no layers")
 
-    if not schema.get('names'):
-        schema['names'] = ['f{0}'.format(i) for i in xrange(np.prod(schema['graph'][0]['n_in']))]
+    if not schema.get(SID.FEATURE_NAMES):
+        schema[SID.FEATURE_NAMES] = ['f{0}'.format(i) 
+                                     for i in xrange(np.prod(schema[SID.GRAPH][0][SID.N_IN]))]
     
-    if np.prod(schema['graph'][0]['n_in']) != len(schema['names']):
-        raise Exception("'names' does not have same length as the number of inputs")
+    if np.prod(schema[SID.GRAPH][0][SID.N_IN]) != len(schema[SID.FEATURE_NAMES]):
+        raise Exception("'{0}' ".format(SID.FEATURE_NAMES)+
+                        "does not have same length as the number of inputs")
 
     convLayers = []
 
     seenNames = set()
 
-    for i,layer in zip(xrange(nLayers),schema['graph']):
+    for i,layer in zip(xrange(nLayers),schema[SID.GRAPH]):
 
-        if not layer.get('n_in'):
-            raise Exception("Layer " + str(layer) + " is missing 'n_in'")
+        if not layer.get(SID.N_IN):
+            raise Exception("Layer " + str(layer) + " is missing '{0}'".format(SID.N_IN))
 
-        if not layer.get('n_out'):
-            raise Exception("Layer " + str(layer) + " is missing 'n_out'")
+        if not layer.get(SID.N_OUT):
+            raise Exception("Layer " + str(layer) + " is missing '{0}'".format(SID.N_OUT))
 
-        if not layer.get('name'):
-            raise Exception("Layer " + str(layer) + " is missing 'name'")
+        if not layer.get(SID.LAYER_NAME):
+            raise Exception("Layer " + str(layer) + " is missing '{0}'".format(SID_LAYER_NAME))
 
         if layer['name'] in seenNames:
             raise Exception("Seeing same layer name twice: " + layer['name'])
