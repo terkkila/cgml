@@ -673,13 +673,19 @@ class ComputationalGraph(object):
 
     def __prepare_y(self,y):
 
-        if self.type == np.int:
+        if self.type == TARGET_TYPE.CLASSIFICATION:
 
             if len(y.shape) == 0:
                 y = np.asarray([y])
-
-            elif len(y.shape) >= 2:
-                 raise Exception("Cannot prepare y for classification when len(y.shape) >= 2")
+            
+            elif len(y.shape) == 1:
+                pass
+            
+            elif len(y.shape) == 2 and y.shape[1] == 1:
+                y = y.reshape((y.shape[0],))
+                
+            else:
+                 raise Exception("Cannot prepare y for classification")
 
         else:
 
@@ -689,8 +695,11 @@ class ComputationalGraph(object):
             elif len(y.shape) == 1:
                 y = y.reshape((y.shape[0],1))
 
-            elif len(y.shape) > 2:
-                raise Exception("Cannot prepare y for regression when len(y.shape) > 2")
+            elif len(y.shape) == 2:
+                pass
+            
+            else:
+                raise Exception("Cannot prepare y for regression")
 
         if y.dtype != self.targetType:
             y = y.astype(self.targetType)
