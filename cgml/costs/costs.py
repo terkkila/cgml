@@ -17,10 +17,10 @@ def negativeLogLikelihood(yhat, y):
 def squaredError(yhat, y):
 
     # Error
-    e = y - yhat
+    e = (y - yhat).ravel()
 
     # Mean of MSEs over 2
-    return( T.mean(T.mean(e*e)) )
+    return( T.mean(e*e) )
 
 
 def crossEntropy(yhat,y):
@@ -29,15 +29,15 @@ def crossEntropy(yhat,y):
 
 def absoluteError(yhat,y):
 
-    e = y - yhat
+    e = (y - yhat).ravel()
 
-    return T.mean(T.abs_(e.ravel()))
+    return T.mean(T.abs_(e))
 
 def absolutePercentageError(yhat,y):
 
-    e = (y - yhat) / y
+    e = ((y - yhat) / y).ravel()
 
-    return T.mean(T.abs_(e.ravel()))
+    return T.mean(T.abs_(e))
 
 def huberError(yhat,y):
 
