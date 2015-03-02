@@ -525,6 +525,9 @@ class ComputationalGraph(object):
                y_valid = None,
                log = None):
 
+        X = self.__prepare_X(X)
+        y = self.__prepare_y(y)
+
         # By default do as many updates as there are samples
         if nTimes is None:
             nTimes = X.shape[0]
@@ -534,12 +537,7 @@ class ComputationalGraph(object):
             miniBatchSize = (DEFAULT_MINI_BATCH_SIZE 
                              if DEFAULT_MINI_BATCH_SIZE > X.shape[0] 
                              else X.shape[0])
-            
-        # Making sure y is also a matrix if we are not doing classification
-        if ( self.type != TARGET_TYPE.CLASSIFICATION and 
-             len(y.shape) == 1 ):
-            y = y.reshape((y.shape[0],1))
-            
+                        
         # Assign the permuted training data to the device
         self.setTrainDataOnDevice(X, y, permute = True)
 
@@ -584,8 +582,7 @@ class ComputationalGraph(object):
 
     def predict(self,X):
 
-        if len(X.shape) == 1:
-            X = X.reshape((1,X.shape[0]))
+        X = self.__prepare_X(X)
 
         return self._predict(X)
 
@@ -613,6 +610,12 @@ class ComputationalGraph(object):
               verbose = False,
               log = None):
 
+        if X_valid is not None:
+            X_valid = self.__prepare_X(X)
+
+        if y_valid is not None:
+            y_valid = self.__prepare_y(y)
+        
         n = 0
         
         currMeanCost = 0.0
@@ -656,6 +659,43 @@ class ComputationalGraph(object):
         else:
             raise Exception("Could not find a cost function!")
 
+
+    def __prepare_X(self,X):
+        
+        if len(X.shape) == 1:
+            X = X.reshape((1,X.shape[0]))
+
+        if X.dtype != theano.config.floatX:
+            X = X.astype(theano.config.floatX)
+
+        return X
+
+
+    def __prepare_y(self,y):
+
+        if self.type == np.int:
+
+            if len(y.shape) == 0:
+                y = np.asarray([y])
+
+            elif len(y.shape) >= 2:
+                 raise Exception("Cannot prepare y for classification when len(y.shape) >= 2")
+
+        else:
+
+            if len(y.shape) == 0:
+                y = np.asarray([[y]])
+
+            elif len(y.shape) == 1:
+                y = y.reshape((y.shape[0],1))
+
+            elif len(y.shape) > 2:
+                raise Exception("Cannot prepare y for regression when len(y.shape) > 2")
+
+        if y.dtype != self.targetType:
+            y = y.astype(self.targetType)
+
+        return y
 
     @classmethod
     def loadFromFile(cls,fileName):
