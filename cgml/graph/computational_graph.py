@@ -169,6 +169,8 @@ class ComputationalGraph(object):
                                self.decay,
                                self.momentum)
 
+        self.__setUpHelpers(index,miniBatchSize)
+
     def __setUpOutputs(self,x):
 
         # We will use these for supervised and unsupervised learning
@@ -499,16 +501,33 @@ class ComputationalGraph(object):
 
         return schemaWithWeights
 
+    def acquireMiniBatchInDevice(self,index,miniBatchSize):
+        return self.__acquireMiniBatchInDevice(index,miniBatchSize)
+    
+    def __setUpHelpers(self,index,miniBatchSize):
+
+        X_dev = self.X_in_device[index:(index+miniBatchSize)]
+        y_dev = self.y_in_device[index:(index+miniBatchSize)]
+
+        self.__acquireMiniBatchInDevice = theano.function(inputs = [index,miniBatchSize],
+                                                          outputs = (X_dev,y_dev) )
+
     def __update(self,index,miniBatchSize):
 
-        if self.hybrid_update is not None:
-            updateCost = self.hybrid_update(index,miniBatchSize)
-        elif self.supervised_update is not None:
-            updateCost = self.supervised_update(index,miniBatchSize)
-        elif self.unsupervised_update is not None:
-            updateCost = self.unsupervised_update(index,miniBatchSize)
-        else:
-            raise Exception("Could not find an update function!")
+        try:
+
+            if self.hybrid_update is not None:
+                updateCost = self.hybrid_update(index,miniBatchSize)
+            elif self.supervised_update is not None:
+                updateCost = self.supervised_update(index,miniBatchSize)
+            elif self.unsupervised_update is not None:
+                updateCost = self.unsupervised_update(index,miniBatchSize)
+            else:
+                raise Exception("Could not find an update function!")
+
+        except Exception,e:
+            X,y = self.acquireMiniBatchInDevice(index,miniBatchSize)
+            raise Exception("X: " + str(X.shape) + ", y: " + str(y.shape) + ", reason: " + str(e))
 
         if np.isinf(updateCost):
             raise Exception("update functions returned inf!")

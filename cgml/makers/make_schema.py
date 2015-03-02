@@ -18,8 +18,8 @@ def makeSchema(n_in = None,
 
             curr_n_out = last_n_in / 2
 
-            if curr_n_out <= 0:
-                curr_n_out = 1
+            if curr_n_out <= n_out:
+                curr_n_out = n_out
             
             layer = {SID.LAYER_NAME: "hidden{0}".format(i),
                      SID.LAYER_N_IN: last_n_in,
