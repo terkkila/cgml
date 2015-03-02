@@ -548,7 +548,6 @@ class ComputationalGraph(object):
         if miniBatchSize > deviceBatchSize:
             raise Exception("miniBatchSize > deviceBatchSize")
             
-
         n, currMeanCost = 0, 0.0
 
         for i in xrange(nTimes):
