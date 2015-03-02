@@ -614,10 +614,10 @@ class ComputationalGraph(object):
               log = None):
 
         if X_valid is not None:
-            X_valid = self.__prepare_X(X)
+            X_valid = self.__prepare_X(X_valid)
 
         if y_valid is not None:
-            y_valid = self.__prepare_y(y)
+            y_valid = self.__prepare_y(y_valid)
         
         n = 0
         
