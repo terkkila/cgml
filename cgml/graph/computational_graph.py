@@ -545,6 +545,10 @@ class ComputationalGraph(object):
 
         deviceBatchSize = X.shape[0]
 
+        if miniBatchSize > deviceBatchSize:
+            raise Exception("miniBatchSize > deviceBatchSize")
+            
+
         n, currMeanCost = 0, 0.0
 
         for i in xrange(nTimes):
@@ -552,7 +556,7 @@ class ComputationalGraph(object):
             n += 1
 
             # Draw a random integer to point to a mini batch in device
-            r = np.random.randint(deviceBatchSize-miniBatchSize)
+            r = np.random.randint(deviceBatchSize - miniBatchSize + 1)
             
             self.trainingSamplesSeen += miniBatchSize 
             
@@ -598,7 +602,7 @@ class ComputationalGraph(object):
         # Permute xy-pairs according to the permutation
         x_train = x_train.take(ics,axis=0)
         y_train = y_train.take(ics,axis=0)
-
+        
         return x_train,y_train
 
 
