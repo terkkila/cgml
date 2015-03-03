@@ -3,6 +3,8 @@ import sys
 import numpy as np
 import theano
 import theano.tensor as T
+
+import cgml.types
 from cgml.graph import makeDropoutLayersFromSchema
 from cgml.graph import makeLayersFromDropoutLayers
 from cgml.graph import parseGraphFromSchema
@@ -93,22 +95,22 @@ class ComputationalGraph(object):
         self.input = T.fmatrix('x')
 
         self.X_in_device = theano.shared( value = np.asarray( [[np.nan]],
-                                                              dtype = theano.config.floatX ) )
+                                                              dtype = cgml.types.floatX ) )
 
         if ( schema.get("supervised-cost") and 
              self.type == TARGET_TYPE.CLASSIFICATION ):
 
-            self.targetType = np.int
+            self.targetType = cgml.types.intX
 
             # Symbolic output matrix
-            self.output = T.lvector('y')
+            self.output = T.ivector('y')
 
             self.y_in_device = theano.shared( value = np.asarray( [0],
                                                                   dtype = self.targetType ) )
 
         else:
 
-            self.targetType = theano.config.floatX
+            self.targetType = cgml.types.floatX
             
             # Symbolic output matrix
             self.output = T.fmatrix('y')
@@ -687,8 +689,8 @@ class ComputationalGraph(object):
         if len(X.shape) == 1:
             X = X.reshape((1,X.shape[0]))
 
-        if X.dtype != theano.config.floatX:
-            X = X.astype(theano.config.floatX)
+        if X.dtype != cgml.types.floatX:
+            X = X.astype(cgml.types.floatX)
 
         return X
 

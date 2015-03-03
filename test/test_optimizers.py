@@ -2,6 +2,7 @@
 import theano
 import theano.tensor as T
 
+import cgml.types
 from cgml.optimizers import Momentum,AdaDelta
 from cgml.graph import ComputationalGraph
 from cgml.layers.base import _make_shared
@@ -60,7 +61,7 @@ def test_adadelta_logreg():
         c = update([2,1],0)
         assert_equals(c,c)
         assert_true(c < c_prev)
-        c_prev = c    
+        c_prev = c
     
 
 def test_adadelta_model():
@@ -81,8 +82,8 @@ def test_adadelta_model():
     model = ComputationalGraph(schema = schema,
                                seed = 0)
     
-    x = np.asarray([[1,2,3,4,5,1,2,3,4,5]]).astype(theano.config.floatX)
-    y = np.asarray([0])
+    x = np.asarray([[1,2,3,4,5,1,2,3,4,5]]).astype(cgml.types.floatX)
+    y = np.asarray([0],dtype=cgml.types.intX)
 
     model.setTrainDataOnDevice(x,y)
 

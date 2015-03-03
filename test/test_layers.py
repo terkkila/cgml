@@ -2,6 +2,8 @@
 import numpy as np
 import theano
 import theano.tensor as T
+
+import cgml.types
 from cgml.graph import ComputationalGraph
 
 def assertModelWeightsMatch(model):
@@ -50,8 +52,8 @@ def test_layers():
 
     assertModelWeightsMatch(model)
 
-    y_train = np.asarray([0]).astype(np.int)
-    x_train = np.asarray([range(100)]).astype(theano.config.floatX)
+    y_train = np.asarray([0]).astype(cgml.types.intX)
+    x_train = np.asarray([range(100)]).astype(cgml.types.floatX)
 
     model.setTrainDataOnDevice(x_train,y_train)
     

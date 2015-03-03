@@ -3,6 +3,7 @@ import theano
 import theano.tensor as T
 import numpy as np
 
+import cgml.types
 from cgml.activations import conv2d
 from cgml.graph import ComputationalGraph
 from cgml.layers.base import _make_images_from_vectors
@@ -22,10 +23,10 @@ def test_conv2d():
     f = theano.function( inputs  = [x2_sym,filters_sym],
                          outputs = f_sym)
 
-    X = np.asarray([[1,2,3,4,5,6,7,8,9],[10,11,12,13,14,15,16,17,18]]).astype(theano.config.floatX)
+    X = np.asarray([[1,2,3,4,5,6,7,8,9],[10,11,12,13,14,15,16,17,18]]).astype(cgml.types.floatX)
 
     filters = np.asarray([[[0,0,0],[0,1,0],[0,0,0]],
-                          [[0,0,0],[0,2,0],[0,0,0]]]).reshape((2,1,3,3)).astype(theano.config.floatX)
+                          [[0,0,0],[0,2,0],[0,0,0]]]).reshape((2,1,3,3)).astype(cgml.types.floatX)
     
 
     Y = f(X,filters)
@@ -71,7 +72,7 @@ def test_conv2d_layers():
     out2 = theano.function(inputs = [x_sym],
                            outputs = cl2.output)
 
-    x = np.asarray([[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16]]).astype(theano.config.floatX)
+    x = np.asarray([[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16]]).astype(cgml.types.floatX)
 
     print out1(x).shape
     assert out1(x).shape == (1,2,3,3)
@@ -112,11 +113,11 @@ def test_conv2d_graph():
     model = ComputationalGraph(schema = schema,
                                seed = 0)
 
-    X = np.asarray([[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16]]).astype(theano.config.floatX)
+    X = np.asarray([[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16]]).astype(cgml.types.floatX)
 
     y_hat = model.predict(X)
 
-    y = np.asarray([0]).astype(np.int)
+    y = np.asarray([0]).astype(cgml.types.intX)
 
     model.setTrainDataOnDevice(X,y)
 
@@ -153,8 +154,8 @@ def test_conv2d_graph2():
    model = ComputationalGraph(schema = schema,
                               seed = 0)
 
-   x = np.random.uniform(size=(10,14)).reshape((1,10*14)).astype(theano.config.floatX)
-   y = np.asarray([0]).astype(np.int)
+   x = np.random.uniform(size=(10,14)).reshape((1,10*14)).astype(cgml.types.floatX)
+   y = np.asarray([0]).astype(cgml.types.intX)
 
    model.setTrainDataOnDevice(x,y)
 

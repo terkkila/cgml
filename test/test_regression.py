@@ -2,6 +2,8 @@
 import theano
 import theano.tensor as T
 import numpy as np
+
+import cgml.types
 from cgml.graph import ComputationalGraph
 
 def test_linear_regression():
@@ -27,10 +29,10 @@ def test_linear_regression():
     for i in xrange(nLayers):
         assert not np.any(model.layers[i].weights[1])
         
-    assert model.targetType == theano.config.floatX
+    assert model.targetType == cgml.types.floatX
         
-    x = np.asarray([[1,2,3,4,5],[2,3,4,5,6]]).astype(theano.config.floatX)
-    y = np.asarray([[0],[1]],dtype=theano.config.floatX).astype(theano.config.floatX)
+    x = np.asarray([[1,2,3,4,5],[2,3,4,5,6]]).astype(cgml.types.floatX)
+    y = np.asarray([[0],[1]],dtype=cgml.types.floatX).astype(cgml.types.floatX)
     
     yhat = model.predict(x)
 
@@ -67,10 +69,10 @@ def test_structured_linear_regression():
     for i in xrange(nLayers):
         assert not np.any(model.layers[i].weights[1])
         
-    assert model.targetType == theano.config.floatX
+    assert model.targetType == cgml.types.floatX
         
-    x = np.asarray([[1,2,3,4,5],[2,3,4,5,6]]).astype(theano.config.floatX)
-    y = np.asarray([[0,0.5],[1,0.2]],dtype=theano.config.floatX).astype(theano.config.floatX)
+    x = np.asarray([[1,2,3,4,5],[2,3,4,5,6]]).astype(cgml.types.floatX)
+    y = np.asarray([[0,0.5],[1,0.2]],dtype=cgml.types.floatX).astype(cgml.types.floatX)
     
     yhat = model.predict(x)
 
