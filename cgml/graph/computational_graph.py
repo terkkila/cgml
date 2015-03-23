@@ -686,6 +686,8 @@ class ComputationalGraph(object):
 
     def __prepare_X(self,X):
         
+        X = np.asarray(X)
+
         if len(X.shape) == 1:
             X = X.reshape((1,X.shape[0]))
 
@@ -696,6 +698,8 @@ class ComputationalGraph(object):
 
 
     def __prepare_y(self,y):
+
+        y = np.asarray(y)
 
         if self.type == TARGET_TYPE.CLASSIFICATION:
 
