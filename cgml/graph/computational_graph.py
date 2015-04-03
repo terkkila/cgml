@@ -276,10 +276,12 @@ class ComputationalGraph(object):
                                                outputs = self._decode_output )
 
 
-    def importance(self,x):
+    def importance(self,X):
+
+        X = self.__prepare_X(X)
 
         # Will return a stack of 2d matrices, one matrix per sample in the minibatch
-        rawImportance = self._importance(x)
+        rawImportance = self._importance(X)
 
         finalImportance = []
 
@@ -686,7 +688,10 @@ class ComputationalGraph(object):
 
     def __prepare_X(self,X):
         
-        X = np.asarray(X)
+        try: 
+            X = np.asarray(X,dtype=cgml.types.floatX)
+        except Exception,e:
+            raise Exception("Could not prepare X: {0}.\nReason: {1}".format(X,str(e)))
 
         if len(X.shape) == 1:
             X = X.reshape((1,X.shape[0]))
