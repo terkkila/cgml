@@ -6,7 +6,8 @@ def makeSchema(n_in = None,
                n_out = None,
                nLayers = 1,
                modelType = None,
-               costFunction = None):
+               costFunction = None,
+               activationFunction = None):
 
     last_n_in = n_in
 
@@ -24,7 +25,7 @@ def makeSchema(n_in = None,
             layer = {SID.LAYER_NAME: "hidden{0}".format(i),
                      SID.LAYER_N_IN: last_n_in,
                      SID.LAYER_N_OUT: curr_n_out,
-                     SID.LAYER_ACTIVATION: "tanh",
+                     SID.LAYER_ACTIVATION: activationFunction,
                      SID.LAYER_DROPOUT: 0.2}
             
             layers.append(layer)
