@@ -7,7 +7,7 @@ def makeSchema(n_in = None,
                nLayers = 1,
                modelType = None,
                costFunction = None,
-               activationFunction = None):
+               activationFunction = "tanh"):
 
     last_n_in = n_in
 
