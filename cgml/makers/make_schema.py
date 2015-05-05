@@ -5,6 +5,7 @@ from cgml.validators import validateSchema
 def makeSchema(n_in = None,
                n_out = None,
                nLayers = 1,
+               inputDropRate = 2,
                modelType = None,
                costFunction = None,
                activationFunction = "tanh"):

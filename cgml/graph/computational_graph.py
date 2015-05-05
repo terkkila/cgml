@@ -3,6 +3,7 @@ import sys
 import numpy as np
 import theano
 import theano.tensor as T
+import logging
 
 import cgml.types
 from cgml.graph import makeDropoutLayersFromSchema
@@ -61,13 +62,15 @@ class ComputationalGraph(object):
 
     def __init__(self,
                  schema = None,
-                 log   = None,
+                 logger = logging.Logger("CGML Logger"),
                  epsilon = DEFAULT_ADADELTA_EPSILON,
                  decay = DEFAULT_ADADELTA_DECAY,
                  momentum = DEFAULT_ADADELTA_MOMENTUM,
                  seed = None,
                  supCostWeight = 1,
                  unsupCostWeight = 1):
+
+        self.__logger = logger
 
         # Variable that counts how many training samples have been used for training so far
         # This can be used for logging purposes 
@@ -125,10 +128,20 @@ class ComputationalGraph(object):
         # Schema to build the model from
         self.schema = schema
 
-        if log:
-            log.write('Loaded the following schema: ' +
-                      str(self.schema) + '\n')
+        self.__logger.info('Loaded the following schema: {}'.format(self.schema))
 
+        self.__initGraph()
+
+        self.__compileFunctions()
+
+
+    def reset(self):
+
+        self.__initGraph()
+
+
+    def __initGraph(self):
+        
         # Parse layers from the schema. Input is needed to clamp
         # it with the first layer
         self.layers,self.dropoutLayers = parseGraphFromSchema(self.input,
@@ -139,30 +152,26 @@ class ComputationalGraph(object):
         self.params = [param for layer in self.dropoutLayers
                        for param in layer.params]
 
-        self.compile(log = log)
 
-    def compile(self, log = None):
+    def __compileFunctions(self):
 
-        if log:
-            log.write("Compiling computational graph:\n")
+        self.__logger.info("Compiling computational graph:")
 
         index = T.lscalar('index')
 
         miniBatchSize = T.lscalar('miniBatchSize')
 
-        if log:
-            log.write(" - Setting up and compiling outputs\n")
+
+        self.__logger.info(" - Setting up and compiling outputs")
         self.__setUpOutputs(self.input)
 
-        if log:
-            log.write(" - Setting up and compiling cost functions\n")
+        self.__logger.info(" - Setting up and compiling cost functions")
         self.__setUpCostFunctions(self.input,
                                   self.output,
                                   self.supCostWeight,
                                   self.unsupCostWeight)
 
-        if log:
-            log.write(" - Setting up and compiling optimizers\n")
+        self.__logger.info(" - Setting up and compiling optimizers")
         self.__setUpOptimizers(index,
                                miniBatchSize,
                                self.input,
@@ -276,27 +285,34 @@ class ComputationalGraph(object):
                                                outputs = self._decode_output )
 
 
-    def importance(self,X):
+    def gradient(self,X):
 
         X = self.__prepare_X(X)
 
         # Will return a stack of 2d matrices, one matrix per sample in the minibatch
-        rawImportance = self._importance(X)
+        # The _importance Theano function returns the last two dimensions in wrong order, hence the 
+        # swapaxes routine. In the end, the element G[i,j,k] is for
+        # - i'th sample
+        # - j'th feature
+        # - k'th target
+        G = np.swapaxes(np.asarray(self._importance(X)),1,2)
 
-        finalImportance = []
+        #        finalImportance = []
+        #
+        #        # Loop through each 2d matrix in the minibatch
+        #        for tmpImportance in rawImportance:
+        #
+        #            # Assign name to each variable importance vector for vectorized outputs
+        #            sampleImportance = [variableImportance.tolist() for variableImportance in tmpImportance.T]
+        #
+        #            finalImportance.append(sampleImportance)
+        #
+        #
+        #        return finalImportance
+        
+        return G
 
-        # Loop through each 2d matrix in the minibatch
-        for tmpImportance in rawImportance:
-
-            # Assign name to each variable importance vector for vectorized outputs
-            sampleImportance = OrderedDict([ (name,variableImportance.tolist()) 
-                                             for name,variableImportance in zip(self.schema['names'],
-                                                                                tmpImportance.T)])
-
-            finalImportance.append(sampleImportance)
-
-        return finalImportance
-                
+      
     def __setUpCostFunctions(self,
                              x,
                              y,
@@ -545,8 +561,7 @@ class ComputationalGraph(object):
                nTimes = None,
                miniBatchSize = None, 
                X_valid = None,
-               y_valid = None,
-               log = None):
+               y_valid = None):
 
         X = self.__prepare_X(X)
         y = self.__prepare_y(y)
@@ -594,16 +609,14 @@ class ComputationalGraph(object):
                 doCheck = False
 
             # If we decide to check with the validation data...
-            if doCheck and log is not None:
+            if doCheck:
 
-                log.write('Sample ' + str(self.trainingSamplesSeen) + 
-                          ', avg. train cost ' + str(currMeanCost))
+                self.__logger.info('Sample ' + str(self.trainingSamplesSeen) + 
+                                   ', avg. train cost ' + str(currMeanCost))
                 
                 if doValidation:
-                    self.printCostStatistics(X_valid,y_valid,log)
+                    self.printCostStatistics(X_valid,y_valid)
                     
-                log.write('\n')
-
                 n, currMeanCost = 0, 0.0
 
     def predict(self,X):
@@ -633,8 +646,7 @@ class ComputationalGraph(object):
               X_valid = None,
               y_valid = None,
               miniBatchSize = DEFAULT_MINI_BATCH_SIZE,
-              verbose = False,
-              log = None):
+              verbose = False):
 
         if X_valid is not None:
             X_valid = self.__prepare_X(X_valid)
@@ -655,32 +667,31 @@ class ComputationalGraph(object):
             self.update(X_train, 
                         y_train, 
                         nTimes = nTimes, 
-                        miniBatchSize = miniBatchSize, 
-                        log = log,
+                        miniBatchSize = miniBatchSize,
                         X_valid = X_valid,
                         y_valid = y_valid)
 
-    def printCostStatistics(self,x_valid,y_valid,log):
+    def printCostStatistics(self,x_valid,y_valid):
 
         if self.hybrid_cost is not None:
             validSupCost = self.supervised_cost(x_valid,y_valid)
             validUnsupCost = self.unsupervised_cost(x_valid)
             validHybCost = self.hybrid_cost(x_valid,y_valid)
-            log.write(', valid.sup.cost ' + str(validSupCost) +
-            ', valid.unsup.cost ' + str(validUnsupCost) + 
-                      ', valid.hyb.cost ' + str(validHybCost))
+            self.__logger.info(', valid.sup.cost ' + str(validSupCost) +
+                               ', valid.unsup.cost ' + str(validUnsupCost) + 
+                               ', valid.hyb.cost ' + str(validHybCost))
                       
         elif self.supervised_cost is not None:
             validCost = self.supervised_cost(x_valid,y_valid)
-            log.write(', validation cost ' + str(validCost))
+            self.__logger.info(', validation cost ' + str(validCost))
             if self.schema['type'] == 'classification':
                 yhat = self.predict(x_valid)
                 pMisClass = np.mean(yhat != y_valid)
-                log.write(", misclassification rate {:.3f}".format(pMisClass*100))
+                self.__logger.info(", misclassification rate {:.3f}".format(pMisClass*100))
                             
         elif self.unsupervised_cost is not None:
             validCost = self.unsupervised_cost(x_valid)
-            log.write(', validation cost ' + str(validCost))
+            self.__logger.info(', validation cost ' + str(validCost))
             
         else:
             raise Exception("Could not find a cost function!")
