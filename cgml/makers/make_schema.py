@@ -18,7 +18,7 @@ def makeSchema(n_in = None,
 
         for i in xrange(nLayers - 1):
 
-            curr_n_out = last_n_in / 2
+            curr_n_out = int(round(last_n_in / inputDropRate))
 
             if curr_n_out <= n_out:
                 curr_n_out = n_out

@@ -1,5 +1,7 @@
 
-import argparse,random
+import argparse
+import random
+import logging
 
 from cgml.constants import DEFAULT_ADADELTA_EPSILON
 from cgml.constants import DEFAULT_ADADELTA_DECAY
@@ -8,7 +10,7 @@ from cgml.constants import DEFAULT_MINI_BATCH_SIZE
 from cgml.constants import DEFAULT_MINI_BATCH_INCREMENT
 from cgml.constants import DEFAULT_DEVICE_BATCH_SIZE
 
-def parseArgs(log = None):
+def parseArgs(logger = logging.Logger("CGML Logger")):
 
     parser = argparse.ArgumentParser( description = 'Machine Learning with Computational Graphs.')
 
@@ -183,32 +185,30 @@ def parseArgs(log = None):
 
     args = parser.parse_args()
 
-    if log:
-
-        log.write('\nParsed the following arguments:\n')
-        log.write(' --verbose            ' + str(args.verbose)            + '\n')
-        log.write(' --seed               ' + str(args.seed)               + '\n')
-        log.write(' --cg                 ' + str(args.cg)                 + '\n')
-        log.write(' --trainData          ' + str(args.trainData)          + '\n')
-        log.write(' --trainDataStream    ' + str(args.trainDataStream)    + '\n')
-        log.write(' --validData          ' + str(args.validData)          + '\n')
-        log.write(' --testData           ' + str(args.testData)           + '\n')
-        log.write(' --predictions        ' + str(args.predictions)        + '\n')
-        log.write(' --getImportance      ' + str(args.getImportance)      + '\n')
-        log.write(' --supCostWeight      ' + str(args.supCostWeight)      + '\n')
-        log.write(' --unsupCostWeight    ' + str(args.unsupCostWeight)    + '\n')
-        log.write(' --deviceBatchSize    ' + str(args.deviceBatchSize)    + '\n')
-        log.write(' --miniBatchSize      ' + str(args.miniBatchSize)      + '\n')
-        log.write(' --miniBatchIncrement ' + str(args.miniBatchIncrement) + '\n')
-        log.write(' --nPasses            ' + str(args.nPasses)            + '\n')
-        log.write(' --epsilon            ' + str(args.epsilon)            + '\n')
-        log.write(' --decay              ' + str(args.decay)              + '\n')
-        log.write(' --momentum           ' + str(args.momentum)           + '\n')
-        log.write(' --save               ' + str(args.save)               + '\n')
-        log.write(' --load               ' + str(args.load)               + '\n')
-        log.write(' --ensemble           ' + str(args.ensemble)           + '\n')
-        log.write(' --recompileOnLoad    ' + str(args.recompileOnLoad)    + '\n')
-
+    logger.info('\nParsed the following arguments:\n')
+    logger.info(' --verbose            ' + str(args.verbose)            )
+    logger.info(' --seed               ' + str(args.seed)               )
+    logger.info(' --cg                 ' + str(args.cg)                 )
+    logger.info(' --trainData          ' + str(args.trainData)          )
+    logger.info(' --trainDataStream    ' + str(args.trainDataStream)    )
+    logger.info(' --validData          ' + str(args.validData)          )
+    logger.info(' --testData           ' + str(args.testData)           )
+    logger.info(' --predictions        ' + str(args.predictions)        )
+    logger.info(' --getImportance      ' + str(args.getImportance)      )
+    logger.info(' --supCostWeight      ' + str(args.supCostWeight)      )
+    logger.info(' --unsupCostWeight    ' + str(args.unsupCostWeight)    )
+    logger.info(' --deviceBatchSize    ' + str(args.deviceBatchSize)    )
+    logger.info(' --miniBatchSize      ' + str(args.miniBatchSize)      )
+    logger.info(' --miniBatchIncrement ' + str(args.miniBatchIncrement) )
+    logger.info(' --nPasses            ' + str(args.nPasses)            )
+    logger.info(' --epsilon            ' + str(args.epsilon)            )
+    logger.info(' --decay              ' + str(args.decay)              )
+    logger.info(' --momentum           ' + str(args.momentum)           )
+    logger.info(' --save               ' + str(args.save)               )
+    logger.info(' --load               ' + str(args.load)               )
+    logger.info(' --ensemble           ' + str(args.ensemble)           )
+    logger.info(' --recompileOnLoad    ' + str(args.recompileOnLoad)    )
+    
     if not args.cg and not args.load:
         raise Exception("You must provide either a Computational Graph schema file (--cg) " + 
                         "or model to load (--load)")

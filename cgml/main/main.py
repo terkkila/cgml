@@ -21,7 +21,7 @@ def resolveOutStream(args):
 
     return outStream
 
-def resolveModel(args,log = None):
+def resolveModel(args,logger):
 
     if args.load:
 
@@ -34,7 +34,7 @@ def resolveModel(args,log = None):
         
         # Create the model
         model = ComputationalGraph(schema = yaml.load(open(args.cg,'r')),
-                                   log = log,
+                                   logger = logger,
                                    supCostWeight = args.supCostWeight,
                                    unsupCostWeight = args.unsupCostWeight,
                                    seed = args.seed,
@@ -43,22 +43,20 @@ def resolveModel(args,log = None):
                                    momentum = args.momentum)
         
     if args.recompileOnLoad:
-        model.compile(log = log)
+        model.compile(logger = logger)
 
-    if log:
-        log.write(str(model._predict.maker.fgraph.toposort())+'\n')
+    logger.info(str(model._predict.maker.fgraph.toposort()))
 
     # Check if GPU is being used or not
-    if log and np.any([ isinstance(x.op, T.Elemwise) 
-                        for x in model._predict.maker.fgraph.toposort()]):
-        log.write('No GPU found -- using CPU instead\n')
+    if np.any([ isinstance(x.op, T.Elemwise) 
+                for x in model._predict.maker.fgraph.toposort()]):
+        logger.info('No GPU found -- using CPU instead\n')
     else:
-        log.write('Found GPU -- using that whenever possible\n')
+        logger.info('Found GPU -- using that whenever possible\n')
 
 
     # Write description of the model to log streamx
-    if log:
-        log.write('\n' + str(model) + '\n')
+    logger.info('\n' + str(model) + '\n')
 
     return model
 
@@ -66,8 +64,7 @@ def resolveValidationData(args,targetType,log = None):
 
     if args.validData:
         
-        if log:
-            log.write("Caching validation data for monitoring\n")
+        logger.info("Caching validation data for monitoring")
             
         sampleIDs,xValid,yValid = DataReader(args.validData,
                                              targetType = targetType).cache()
@@ -89,14 +86,13 @@ def strMat(mat):
     return '\n'.join(strVec(map(strVec,row)) for row in mat)
 
 
-def startTrainingRoutine(model,args,log = None):
+def startTrainingRoutine(model,args,logger):
 
-    sampleID,xValid,yValid = resolveValidationData(args,model.targetType,log = log)
+    sampleID,xValid,yValid = resolveValidationData(args,model.targetType,logger)
         
     if args.trainData or args.trainDataStream:
         
-        if log:
-            log.write("Starting to read input data for training\n")
+        logger.info("Starting to read input data for training")
         
         if args.trainData:
             
@@ -117,34 +113,27 @@ def startTrainingRoutine(model,args,log = None):
             # Incrementing mini batch size if increment is > 0
             miniBatchSize = args.miniBatchSize + passIdx * args.miniBatchIncrement
 
-            if log:
-                log.write("Pass " + str(passIdx) + 
-                          " with mini-batch size " + 
-                          str(miniBatchSize) + "\n")
+            logger.info("Pass " + str(passIdx) + 
+                        " with mini-batch size " + 
+                        str(miniBatchSize))
             
             trainLog = model.train(drTrain = drTrain,
                                    X_valid = xValid,
                                    y_valid = yValid,
                                    miniBatchSize = miniBatchSize,
-                                   verbose = args.verbose,
-                                   log = log)
+                                   verbose = args.verbose)
             
-            if log:
-                log.write(str(trainLog) + '\n')
+            logger.info(str(trainLog))
             
             if args.nPasses > 1:
                 drTrain.rewind()
 
-    if log:
-        log.write('\n')
+def startTestingRoutine(model,args,outStream,logger):
 
-def startTestingRoutine(model,args,outStream,log = None):
-
-    if log:
-        log.write("Starting to read data for prediction\n")
+    logger.info("Starting to read data for prediction\n")
     
-    if not args.predictions and log:
-        log.write("WARNING: no predictions file provided! Predictions will not be saved\n")
+    if not args.predictions:
+        logger.info("WARNING: no predictions file provided! Predictions will not be saved\n")
 
     # Data reader for prediction
     drTest  = DataReader(args.testData,

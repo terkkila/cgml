@@ -437,7 +437,6 @@ class ComputationalGraph(object):
                 givens  = {x:self.X_in_device[index:(index+miniBatchSize)],
                            y:self.y_in_device[index:(index+miniBatchSize)]})
 
-            
             self.supervised_cost = theano.function(
                 inputs  = [x,y],
                 outputs = self._supervised_cost)
