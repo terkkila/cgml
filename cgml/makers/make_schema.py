@@ -27,7 +27,7 @@ def makeSchema(n_in = None,
                      SID.LAYER_N_IN: last_n_in,
                      SID.LAYER_N_OUT: curr_n_out,
                      SID.LAYER_ACTIVATION: activationFunction,
-                     SID.LAYER_DROPOUT: 0.2}
+                     SID.LAYER_DROPOUT: (0.2 if i == 0 else 0.5)}
             
             layers.append(layer)
 

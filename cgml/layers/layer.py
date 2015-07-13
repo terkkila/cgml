@@ -47,7 +47,7 @@ class Layer(object):
         self.activation = activation
 
         # Create W if not given
-        if not W:
+        if W is None:
             self.W = _make_shared( _make_weight_matrix(rng = rng,
                                                        n_in = n_in,
                                                        n_out = n_out,
@@ -59,7 +59,7 @@ class Layer(object):
         
             
         # Create b if not given
-        if not b:
+        if b is None:
             self.b = _make_shared( _make_bias_vector(rng = rng,
                                                      n_in = n_in,
                                                      n_out = n_out,
@@ -71,17 +71,15 @@ class Layer(object):
 
         # If activation function is defined, use it,
         # otherwise assign linear activation
-        if self.activation != None:
-            self.output = self.activation(T.dot(input,self.W) + self.b)
+        if self.activation is not None:
+            self.output = self.activation(T.dot(self.input,self.W) + self.b)
         else:
-            self.output = T.dot(input,self.W) + self.b
+            self.output = T.dot(self.input,self.W) + self.b
             
         self.params = [self.W,self.b]
 
         self.weights = theano.function( inputs = [],
                                         outputs = (self.W,self.b) )
 
-        #print self.name + ": " + str(self.n_in) + ' ' + str(self.n_out) + ' ' + \
-        #    str(self.input.ndim) + ' ' + str(self.output.ndim)
         
 

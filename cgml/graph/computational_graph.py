@@ -297,19 +297,6 @@ class ComputationalGraph(object):
         # - k'th target
         G = np.swapaxes(np.asarray(self._importance(X)),1,2)
 
-        #        finalImportance = []
-        #
-        #        # Loop through each 2d matrix in the minibatch
-        #        for tmpImportance in rawImportance:
-        #
-        #            # Assign name to each variable importance vector for vectorized outputs
-        #            sampleImportance = [variableImportance.tolist() for variableImportance in tmpImportance.T]
-        #
-        #            finalImportance.append(sampleImportance)
-        #
-        #
-        #        return finalImportance
-        
         return G
 
       
@@ -610,11 +597,10 @@ class ComputationalGraph(object):
             # If we decide to check with the validation data...
             if doCheck:
 
-                self.__logger.info('Sample ' + str(self.trainingSamplesSeen) + 
-                                   ', avg. train cost ' + str(currMeanCost))
-                
-                if doValidation:
-                    self.printCostStatistics(X_valid,y_valid)
+                self.printCostStatistics(self.trainingSamplesSeen,
+                                         currMeanCost,
+                                         X_valid,
+                                         y_valid)
                     
                 n, currMeanCost = 0, 0.0
 
@@ -670,30 +656,37 @@ class ComputationalGraph(object):
                         X_valid = X_valid,
                         y_valid = y_valid)
 
-    def printCostStatistics(self,x_valid,y_valid):
+    def printCostStatistics(self,
+                            trainingSamplesSeen,
+                            trainCost,
+                            x_valid,
+                            y_valid):
 
+        msg = ('Sample ' + str(trainingSamplesSeen) + 
+               ', avg. train cost ' + str(trainCost))
+                
         if self.hybrid_cost is not None:
             validSupCost = self.supervised_cost(x_valid,y_valid)
             validUnsupCost = self.unsupervised_cost(x_valid)
             validHybCost = self.hybrid_cost(x_valid,y_valid)
-            self.__logger.info(', valid.sup.cost ' + str(validSupCost) +
+            self.__logger.info(msg + ', valid.sup.cost ' + str(validSupCost) +
                                ', valid.unsup.cost ' + str(validUnsupCost) + 
                                ', valid.hyb.cost ' + str(validHybCost))
-                      
-        elif self.supervised_cost is not None:
+            
+        elif self.supervised_cost is not None and y_valid is not None:
             validCost = self.supervised_cost(x_valid,y_valid)
-            self.__logger.info(', validation cost ' + str(validCost))
+            self.__logger.info(msg + ', validation cost ' + str(validCost))
             if self.schema['type'] == 'classification':
                 yhat = self.predict(x_valid)
                 pMisClass = np.mean(yhat != y_valid)
-                self.__logger.info(", misclassification rate {:.3f}".format(pMisClass*100))
+                self.__logger.info(msg + ", misclassification rate {:.3f}".format(pMisClass*100))
                             
         elif self.unsupervised_cost is not None:
             validCost = self.unsupervised_cost(x_valid)
-            self.__logger.info(', validation cost ' + str(validCost))
+            self.__logger.info(msg + ', validation cost ' + str(validCost))
             
         else:
-            raise Exception("Could not find a cost function!")
+            self.__logger.info(msg)
 
 
     def __prepare_X(self,X):

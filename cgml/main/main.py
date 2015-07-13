@@ -60,7 +60,9 @@ def resolveModel(args,logger):
 
     return model
 
-def resolveValidationData(args,targetType,log = None):
+def resolveValidationData(args,
+                          targetType,
+                          logger):
 
     if args.validData:
         
