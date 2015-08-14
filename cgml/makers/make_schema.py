@@ -33,11 +33,12 @@ def makeSchema(n_in = None,
 
             last_n_in = curr_n_out
         
+    # No dropout with nLayers == 1, which is linear model
     lastLayer = {SID.LAYER_NAME: "output",
                  SID.LAYER_N_IN: last_n_in,
                  SID.LAYER_N_OUT: n_out,
                  SID.LAYER_ACTIVATION: "linear",
-                 SID.LAYER_DROPOUT: 0.0}
+                 SID.LAYER_DROPOUT: (0.0 if nLayers == 1 else 0.5)} 
 
     layers.append(lastLayer)
     
