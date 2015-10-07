@@ -42,9 +42,10 @@ def test_linear_regression():
     for yhati in yhat:
         assert not np.isnan(yhati) and not np.abs(yhati) < 1e-15
 
-    model.setTrainDataOnDevice(x,y)
+    model.update(x, y)
 
-    model.supervised_update(0,2)
+    yhat2 = model.predict(x)
+    
 
 
 def test_structured_linear_regression():

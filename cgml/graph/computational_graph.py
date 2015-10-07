@@ -563,9 +563,9 @@ class ComputationalGraph(object):
         deviceBatchSize = nSamples
 
         # Set miniBatchSize to the smallest of the following
-        miniBatchSize = np.min(miniBatchSize,
-                               nSamples,
-                               deviceBatchSize)
+        miniBatchSize = np.min([miniBatchSize,
+                                nSamples,
+                                deviceBatchSize])
 
         # Assign the permuted training data to the device
         self.setTrainDataOnDevice(X, y, permute = True)
