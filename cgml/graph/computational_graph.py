@@ -746,3 +746,16 @@ class ComputationalGraph(object):
     def loadFromFile(cls,fileName):
         return cPickle.load(open(fileName,'rb'))
 
+
+    def __deepcopy__(self, memo):
+        
+	import sys
+	sys.setrecursionlimit(50000)
+
+	sys.modules['mtrand'] = np.random.mtrand
+
+        that = type(self)(schema=self.schema)
+        
+	that.__dict__.update(self.__dict__)
+
+        return that

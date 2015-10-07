@@ -24,6 +24,8 @@ def test_cg():
      
     model = ComputationalGraph(schema = schema,
                                seed = 0)
+ 
+    model2 = copy.deepcopy(model)
 
     
 
