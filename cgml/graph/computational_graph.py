@@ -545,7 +545,7 @@ class ComputationalGraph(object):
                X, 
                y, 
                nTimes = None,
-               miniBatchSize = None, 
+               miniBatchSize = DEFAULT_MINI_BATCH_SIZE, 
                X_valid = None,
                y_valid = None):
 
@@ -556,21 +556,22 @@ class ComputationalGraph(object):
         if nTimes is None:
             nTimes = X.shape[0]
 
-        # Assign some plausible default value to mini batch size 
-        if miniBatchSize is None:
-            miniBatchSize = (DEFAULT_MINI_BATCH_SIZE 
-                             if DEFAULT_MINI_BATCH_SIZE > X.shape[0] 
-                             else X.shape[0])
-                        
+        nSamples = X.shape[0]
+
+        # Set as many samples to the device memory as possible
+        # NOTE: this may be set otherwise in the future
+        deviceBatchSize = nSamples
+
+        # Set miniBatchSize to the smallest of the following
+        miniBatchSize = np.min(miniBatchSize,
+                               nSamples,
+                               deviceBatchSize)
+
         # Assign the permuted training data to the device
         self.setTrainDataOnDevice(X, y, permute = True)
 
+        # Determine if validation is needed
         doValidation = (X_valid != None and y_valid != None)
-
-        deviceBatchSize = X.shape[0]
-
-        if miniBatchSize > deviceBatchSize:
-            raise Exception("miniBatchSize > deviceBatchSize")
             
         n, currMeanCost = 0, 0.0
 

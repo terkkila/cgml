@@ -1,5 +1,6 @@
 
 import numpy as np
+import copy
 from cgml.graph import ComputationalGraph
 
 from nose.tools import assert_equals,assert_true,assert_almost_equals
