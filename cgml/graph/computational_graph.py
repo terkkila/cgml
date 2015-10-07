@@ -22,6 +22,10 @@ import cPickle
 import copy
 from collections import OrderedDict
 
+# This is needed so that pickler knows how to serialize
+# and deserialize the random number generator
+sys.modules['mtrand'] = np.random.mtrand
+
 class DAG(object):
 
 
@@ -752,8 +756,6 @@ class ComputationalGraph(object):
         
 	import sys
 	sys.setrecursionlimit(50000)
-
-	sys.modules['mtrand'] = np.random.mtrand
 
         that = type(self)(schema=self.schema)
         
