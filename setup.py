@@ -6,7 +6,7 @@ use_setuptools()
 from setuptools import setup,find_packages
 
 setup( name         = 'cgml',
-       version      = '1.0',
+       version      = '1.0.1',
        description  = 'Machine Learning with Computational Graphs',
        author       = 'Timo Erkkilä',
        author_email = 'timo.erkkila@gmail.com',
