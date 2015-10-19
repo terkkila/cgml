@@ -2,9 +2,12 @@
 import theano
 import theano.tensor as T
 import numpy as np
+from nose.tools import assert_true
 
 import cgml.types
 from cgml.graph import ComputationalGraph
+from cgml.makers import makeSchema
+import matplotlib.pyplot as plt
 
 def test_linear_regression():
 
@@ -45,6 +48,49 @@ def test_linear_regression():
     model.update(x, y)
 
     yhat2 = model.predict(x)
+
+
+def test_linear_regression_accuracy():
+
+    np.random.seed(0)
+     
+    X = np.array([[-1.0,-1.0], [1.0,1.0], [2.0,2.0], [3.0,3.0], [4.0,4.0], [5.0,5.0]])
+    #Y = X[:,0].reshape((6,1))
+    Y = np.array(X[:,0].reshape((6,1)), copy=True)
+    
+    X = np.tile(X, (10, 1))
+    Y = np.tile(Y, (10, 1))
+    
+    X = X + 0.01 * np.random.randn(*X.shape)
+    Y = Y + 0.01 * np.random.randn(*Y.shape)
+    
+    nFeatures = X.shape[1]
+    nOutputs = Y.shape[1]
+
+    miniBatchSize = 10
+    nTimes = 1000
+    
+    for useDropout in [False]:
+
+        schema = makeSchema(n_in=nFeatures,
+                            n_out=nOutputs,
+                            nLayers=2,
+                            modelType="regression",
+                            inputDropRate = 2,
+                            costFunction = "squared-error",
+                            activationFunction = "linear",
+                            useDropout=useDropout)
+        
+        model = ComputationalGraph(schema=schema, seed=None)
+        model.update(X, Y,
+                     miniBatchSize=miniBatchSize,
+                     nTimes=nTimes)
+        
+        YHat = model.predict(X)
+        
+        err = np.mean(np.abs(YHat.ravel() - Y.ravel()))
+        
+        assert_true(err < 0.04)
     
 
 
