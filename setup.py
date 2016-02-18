@@ -1,12 +1,12 @@
 # coding=utf-8
 
-from ez_setup import use_setuptools
-use_setuptools()
+#from ez_setup import use_setuptools
+#use_setuptools()
 
 from setuptools import setup,find_packages
 
 setup( name         = 'cgml',
-       version      = '1.0.1',
+       version      = '1.0.3',
        description  = 'Machine Learning with Computational Graphs',
        author       = 'Timo Erkkilä',
        author_email = 'timo.erkkila@gmail.com',

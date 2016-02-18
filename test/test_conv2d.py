@@ -74,10 +74,10 @@ def test_conv2d_layers():
 
     x = np.asarray([[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16]]).astype(cgml.types.floatX)
 
-    print out1(x).shape
+    print(out1(x).shape)
     assert out1(x).shape == (1,2,3,3)
 
-    print out2(x).shape
+    print(out2(x).shape)
     assert out2(x).shape == (1,2,1,1)
 
     

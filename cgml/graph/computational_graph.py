@@ -18,7 +18,12 @@ from cgml.constants import DEFAULT_ADADELTA_DECAY
 from cgml.constants import DEFAULT_ADADELTA_MOMENTUM
 from cgml.constants import DEFAULT_MINI_BATCH_SIZE
 from cgml.constants import TARGET_TYPE
-import cPickle
+
+if sys.version_info[0] >= 3:
+    import pickle
+else:
+    import cPickle as pickle
+
 import copy
 from collections import OrderedDict
 
@@ -364,13 +369,16 @@ class ComputationalGraph(object):
         # If scaling should be applied to the target...
         if self.schema.get("target-scaling"):
 
+            raise Exception("Scaling not functional")
+
             mu = self.schema["target-scaling"]["mean"]
             sd = self.schema["target-scaling"]["stdev"]
             
             # Remember that y is a matrix, so we need two-dimensional map
             standardize_value = lambda value: (value-mu)/sd
             standardize_vec   = lambda vec: map(standardize_value,vec)
-            self.y_in_device.set_value(map(standardize_vec,y))
+            y_standardized = map(standardize_vec,y)
+            self.y_in_device.set_value(y_standardized)
 
         else:
 
@@ -497,7 +505,7 @@ class ComputationalGraph(object):
 
         f = open(fileName,'wb')
     
-        cPickle.dump(self,f,protocol=cPickle.HIGHEST_PROTOCOL)
+        pickle.dump(self,f,protocol=pickle.HIGHEST_PROTOCOL)
 
     def getSchema(self):
         
@@ -535,7 +543,7 @@ class ComputationalGraph(object):
             else:
                 raise Exception("Could not find an update function!")
 
-        except Exception,e:
+        except Exception as e:
             X,y = self.acquireMiniBatchInDevice(index,miniBatchSize)
             raise Exception("X: " + str(X.shape) + ", y: " + str(y.shape) + ", reason: " + str(e))
 
@@ -579,7 +587,7 @@ class ComputationalGraph(object):
             
         n, currMeanCost = 0, 0.0
 
-        for i in xrange(nTimes):
+        for i in range(nTimes):
 
             n += 1
 
@@ -698,7 +706,7 @@ class ComputationalGraph(object):
         
         try: 
             X = np.asarray(X,dtype=cgml.types.floatX)
-        except Exception,e:
+        except Exception as e:
             raise Exception("Could not prepare X: {0}.\nReason: {1}".format(X,str(e)))
 
         if len(X.shape) == 1:
@@ -749,16 +757,15 @@ class ComputationalGraph(object):
 
     @classmethod
     def loadFromFile(cls,fileName):
-        return cPickle.load(open(fileName,'rb'))
-
-
+        return pickle.load(open(fileName,'rb'))
+    
+    
     def __deepcopy__(self, memo):
         
-	import sys
-	sys.setrecursionlimit(50000)
-
+        sys.setrecursionlimit(50000)
+        
         that = type(self)(schema=self.schema)
         
-	that.__dict__.update(self.__dict__)
-
+        that.__dict__.update(self.__dict__)
+        
         return that
