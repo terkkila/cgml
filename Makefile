@@ -1,5 +1,5 @@
 
-PROG := python setup.py
+PROG := python3 setup.py
 
 .PHONY : clean build install test
 
