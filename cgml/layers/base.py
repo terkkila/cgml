@@ -92,7 +92,7 @@ def _make_convolution_filters(rng = None,
 
     W_values = []
     
-    for i in xrange(n_filters_in*n_filters_out):
+    for i in range(n_filters_in*n_filters_out):
         W_values.append( _make_weight_matrix(rng = rng,
                                              n_in = filter_width[0],
                                              n_out = filter_width[1],

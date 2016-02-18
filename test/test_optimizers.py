@@ -57,7 +57,7 @@ def test_adadelta_logreg():
 
     c_prev = c
 
-    for i in xrange(100):
+    for i in range(100):
         c = update([2,1],0)
         assert_equals(c,c)
         assert_true(c < c_prev)
@@ -87,6 +87,6 @@ def test_adadelta_model():
 
     model.setTrainDataOnDevice(x,y)
 
-    for i in xrange(10):
+    for i in range(10):
         model.supervised_update(0,1)
 
