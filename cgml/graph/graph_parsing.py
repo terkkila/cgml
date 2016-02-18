@@ -14,7 +14,7 @@ def makeDropoutLayersFromSchema(x,schema,rng):
     lastOutput = x
     lastNOut = schemaLayers[0]['n_in']
 
-    for i in xrange(nLayers):
+    for i in range(nLayers):
 
         currDropoutLayer = schema['graph'][i]
 
@@ -87,7 +87,7 @@ def makeLayersFromDropoutLayers(x,
     graphHasBranch = False
     layerHasBranch = False
 
-    for i in xrange(nLayers):
+    for i in range(nLayers):
 
         
         layerHasBranch = (True if schema['graph'][i].get('branch') else False)

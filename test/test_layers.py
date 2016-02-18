@@ -94,7 +94,7 @@ def test_varyingDropoutRates():
 
         values = []
 
-        for i in xrange(10000):
+        for i in range(10000):
         
             y_np = f(X_np)
             

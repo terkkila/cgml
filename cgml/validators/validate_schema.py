@@ -72,7 +72,7 @@ def validateSchema(schema):
 
     seenNames = set()
 
-    for i,layer in zip(xrange(nLayers),schema[SID.GRAPH]):
+    for i,layer in zip(range(nLayers),schema[SID.GRAPH]):
 
         if not layer.get(SID.LAYER_N_IN):
             raise Exception("Layer " + str(layer) + " is missing '{0}'".format(SID.LAYER_N_IN))
@@ -93,7 +93,7 @@ def validateSchema(schema):
 
         try:
             activation = parseActivation(layer['activation'])
-        except Exception,e:
+        except Exception as e:
             raise Exception("Activation '" + layer['activation'] + "' could not be parsed")
 
         if layer['activation'] == 'conv2d':

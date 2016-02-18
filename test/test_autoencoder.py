@@ -39,7 +39,7 @@ def test_supervised_autoencoder():
     nLayers = len(model.layers)
     
     assert nLayers == 3
-    for i in xrange(nLayers):
+    for i in range(nLayers):
         assert not np.any(model.layers[i].weights[1])
         
     x = np.asarray([[1,2,3,4,5],[2,3,4,5,6]]).astype(theano.config.floatX)
@@ -47,12 +47,12 @@ def test_supervised_autoencoder():
      
     x_dec = model.decode(x)
     
-    for i in xrange(1,x_dec.shape[0]):
+    for i in range(1,x_dec.shape[0]):
         assert np.all(x_dec[i-1] != x_dec[i])
     
     model.setTrainDataOnDevice(x,y)
     
-    for i in xrange(10):
+    for i in range(10):
         model.hybrid_update(0,1)
     
     assert not np.any(model.layers[0].weights()[0] == model.layers[1].weights()[0].T)
@@ -85,7 +85,7 @@ def test_unsupervised_autoencoder():
     nLayers = len(model.layers)
 
     assert nLayers == 2
-    for i in xrange(nLayers):
+    for i in range(nLayers):
         assert not np.any(model.layers[i].weights[1])
 
     x = np.asarray([[1,2,3,4,5],[2,3,4,5,6]]).astype(theano.config.floatX)
@@ -93,12 +93,12 @@ def test_unsupervised_autoencoder():
     
     x_dec = model.decode(x)
 
-    for i in xrange(1,x_dec.shape[0]):
+    for i in range(1,x_dec.shape[0]):
         assert np.all(x_dec[i-1] != x_dec[i])
 
     model.setTrainDataOnDevice(x,y)
 
-    for i in xrange(10):
+    for i in range(10):
         cost = model.unsupervised_update(0,1)
         assert cost > 0
 

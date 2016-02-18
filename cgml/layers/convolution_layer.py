@@ -76,6 +76,6 @@ class ConvolutionLayer(object):
         self.weights = theano.function( inputs = [],
                                         outputs = self.W )
 
-        print self.name + ": " + str(self.n_in) + ' ' + str(self.n_out) + ' ' + \
-            str(self.input.ndim) + ' ' + str(self.output.ndim)
+        print(self.name + ": " + str(self.n_in) + ' ' + str(self.n_out) + ' ' + \
+            str(self.input.ndim) + ' ' + str(self.output.ndim))
         

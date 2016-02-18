@@ -12,7 +12,6 @@ def test_linear_regression():
               'type': 'regression',
               'supervised-cost': {'type': 'squared-error', 
                                   'name': 'scalar-out'},
-              'target-scaling': {'mean': 0, 'stdev': 1},
               'graph':
                   [{'activation':'linear',
                     'n_in':5,
@@ -26,7 +25,7 @@ def test_linear_regression():
     nLayers = len(model.layers)
 
     assert nLayers == 1
-    for i in xrange(nLayers):
+    for i in range(nLayers):
         assert not np.any(model.layers[i].weights[1])
         
     assert model.targetType == cgml.types.floatX
@@ -36,7 +35,7 @@ def test_linear_regression():
     
     yhat = model.predict(x)
 
-    print yhat.shape
+    print(yhat.shape)
     assert yhat.shape == y.shape
 
     for yhati in yhat:
@@ -67,7 +66,7 @@ def test_structured_linear_regression():
     nLayers = len(model.layers)
 
     assert nLayers == 1
-    for i in xrange(nLayers):
+    for i in range(nLayers):
         assert not np.any(model.layers[i].weights[1])
         
     assert model.targetType == cgml.types.floatX
@@ -77,7 +76,7 @@ def test_structured_linear_regression():
     
     yhat = model.predict(x)
 
-    print yhat.shape
+    print(yhat.shape)
     assert yhat.shape == y.shape
 
     for yhati in yhat:
